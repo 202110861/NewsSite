@@ -1215,7 +1215,7 @@ function pick(ids: string[]): Article[] {
   return ids.map((id) => articlesById[id]).filter(Boolean) as Article[];
 }
 
-export const heroArticles = pick(["27", "6", "1"]);
+export const heroArticles = pick(["43", "6", "1", "27"]);
 
 export const hotIssues: HotIssueItem[] = [
   { id: "1", title: articlesById["1"].title },
@@ -1296,3 +1296,22 @@ export const allArticlesSorted: Article[] = Object.values(articlesById).sort(
   (a, b) =>
     new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime(),
 );
+
+/**
+ * 검색어로 기사를 찾는다. 제목 / 요약(excerpt) / 본문(소제목 + 문단)을
+ * 대상으로 대소문자 구분 없이 부분 일치 검색하며, 최신순으로 반환한다.
+ */
+export function searchArticles(query: string): Article[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return [];
+
+  return allArticlesSorted.filter((a) => {
+    if (a.title.toLowerCase().includes(q)) return true;
+    if (a.excerpt?.toLowerCase().includes(q)) return true;
+
+    return (a.body ?? []).some((sec) => {
+      if (typeof sec === "string" && sec.toLowerCase().includes(q)) return true;
+      return false;
+    });
+  });
+}
