@@ -1,20 +1,22 @@
-import { useState } from 'react'
+import { useState } from "react";
+import { Link } from "react-router-dom";
 
 export default function Header() {
-  const [searchOpen, setSearchOpen] = useState(false)
-  const [query, setQuery] = useState('')
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [query, setQuery] = useState("");
 
   return (
     <div className="border-b border-ink-900/10 bg-paper-50">
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-5 sm:px-6">
-        <a href="#top" className="flex items-baseline gap-2">
-          <span className="font-display text-2xl font-black tracking-tight text-ink-900 sm:text-3xl">
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-1 sm:px-6">
+        <Link to="/" className="flex items-baseline gap-2">
+          {/* <span className="font-display text-2xl font-black tracking-tight text-ink-900 sm:text-3xl">
             데일리
           </span>
           <span className="font-display text-2xl font-black tracking-tight text-flash-600 sm:text-3xl">
             가판대
-          </span>
-        </a>
+          </span> */}
+          <img src="/logo.png" alt="logo" className="w-30" />
+        </Link>
 
         <div className="relative">
           {searchOpen ? (
@@ -52,5 +54,5 @@ export default function Header() {
         </div>
       </div>
     </div>
-  )
+  );
 }

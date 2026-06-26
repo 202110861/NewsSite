@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import type { Article } from '../types/news'
 import SectionTag from './SectionTag'
 import { formatTimeAgo } from '../utils/format'
@@ -11,9 +12,8 @@ export default function HeroHeadlines({ articles }: { articles: Article[] }) {
     <section className="mx-auto max-w-6xl px-4 pt-6 sm:px-6">
       <div className="grid gap-5 lg:grid-cols-[1.6fr_1fr]">
         {/* 메인 헤드라인 */}
-        <a
-          href={`#article-${main.id}`}
-          id={`article-${main.id}`}
+        <Link
+          to={`/article/${main.id}`}
           className="group relative block overflow-hidden rounded-lg bg-ink-950"
         >
           <img
@@ -32,15 +32,14 @@ export default function HeroHeadlines({ articles }: { articles: Article[] }) {
               {formatTimeAgo(main.publishedAt)}
             </p>
           </div>
-        </a>
+        </Link>
 
         {/* 보조 헤드라인 */}
         <div className="flex flex-col gap-4">
           {rest.map((a) => (
-            <a
+            <Link
               key={a.id}
-              href={`#article-${a.id}`}
-              id={`article-${a.id}`}
+              to={`/article/${a.id}`}
               className="group flex gap-4 rounded-lg p-1 transition hover:bg-paper-100"
             >
               <div className="h-24 w-32 shrink-0 overflow-hidden rounded-md bg-ink-100 sm:h-28 sm:w-36">
@@ -58,7 +57,7 @@ export default function HeroHeadlines({ articles }: { articles: Article[] }) {
                 </h2>
                 <p className="text-xs text-ink-500">{formatTimeAgo(a.publishedAt)}</p>
               </div>
-            </a>
+            </Link>
           ))}
         </div>
       </div>

@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { hotIssues } from '../data/articles'
 
 export default function HotIssueTicker() {
@@ -19,9 +20,9 @@ export default function HotIssueTicker() {
         <ul className="flex w-max animate-ticker items-center gap-10 whitespace-nowrap px-6 py-2.5">
           {items.map((item, i) => (
             <li key={`${item.id}-${i}`} className="text-sm text-ink-800">
-              <a href={`#article-${item.id}`} className="hover:text-flash-700">
+              <Link to={`/article/${item.id}`} className="hover:text-flash-700">
                 {item.title}
-              </a>
+              </Link>
             </li>
           ))}
         </ul>

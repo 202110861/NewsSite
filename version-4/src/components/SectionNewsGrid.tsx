@@ -1,9 +1,9 @@
+import { Link } from 'react-router-dom'
 import type { Article, SectionId } from '../types/news'
 import SectionTag from './SectionTag'
 
 interface Props {
   data: Record<string, Article[]>
-  labels: Record<SectionId, string>
 }
 
 export default function SectionNewsGrid({ data }: Props) {
@@ -28,8 +28,8 @@ export default function SectionNewsGrid({ data }: Props) {
               <ul className="flex flex-col gap-3">
                 {articles.slice(0, 4).map((a) => (
                   <li key={a.id}>
-                    <a
-                      href={`#article-${a.id}`}
+                    <Link
+                      to={`/article/${a.id}`}
                       className="flex items-center gap-3 hover:text-flash-700"
                     >
                       {a.image && (
@@ -43,7 +43,7 @@ export default function SectionNewsGrid({ data }: Props) {
                       <span className="line-clamp-2 text-sm leading-snug text-ink-800">
                         {a.title}
                       </span>
-                    </a>
+                    </Link>
                   </li>
                 ))}
               </ul>

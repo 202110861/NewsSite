@@ -23,6 +23,10 @@ export interface Article {
   isVideo?: boolean
   publishedAt: string // ISO date
   excerpt?: string
+  /** 상세 페이지 본문 — 문단 단위 배열 */
+  body?: string[]
+  reporter?: string
+  viewCount?: number
 }
 
 export interface HotIssueItem {

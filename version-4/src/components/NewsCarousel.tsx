@@ -1,4 +1,5 @@
 import { useRef } from 'react'
+import { Link } from 'react-router-dom'
 import type { Article } from '../types/news'
 import SectionTag from './SectionTag'
 import { formatTimeAgo } from '../utils/format'
@@ -40,12 +41,7 @@ export default function NewsCarousel({ title, articles, moreHref = '#' }: Props)
           className="flex gap-4 overflow-x-auto scroll-smooth scrollbar-hide"
         >
           {articles.map((a) => (
-            <a
-              key={a.id}
-              href={`#article-${a.id}`}
-              id={`article-${a.id}`}
-              className="group w-44 shrink-0 sm:w-56"
-            >
+            <Link key={a.id} to={`/article/${a.id}`} className="group w-44 shrink-0 sm:w-56">
               <div className="relative overflow-hidden rounded-md bg-ink-100">
                 <img
                   src={a.image}
@@ -68,7 +64,7 @@ export default function NewsCarousel({ title, articles, moreHref = '#' }: Props)
                 </h3>
                 <p className="text-xs text-ink-500">{formatTimeAgo(a.publishedAt)}</p>
               </div>
-            </a>
+            </Link>
           ))}
         </div>
 
