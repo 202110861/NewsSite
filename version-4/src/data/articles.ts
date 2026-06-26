@@ -6,7 +6,7 @@ const img = (seed: string, w = 600, h = 400) =>
   `https://picsum.photos/seed/${seed}/${w}/${h}`;
 
 const REPORTER = "발행인";
-const viewsFor = (id: string) => 1200 + ((Number(id) * 137) % 8800);
+// const viewsFor = (id: string) => 1200 + ((Number(id) * 137) % 8800);
 
 function withBody(body: ArticleBodyBlock[]) {
   return body;
@@ -1240,7 +1240,7 @@ export const politicsArticles = pick([
   "10",
 ]);
 export const economyArticles = pick(["14", "15", "16", "17", "18", "20"]);
-export const eventArticles = pick([]);
+export const eventArticles = pick(["2"]);
 export const cultureArticles = pick(["21", "22", "23", "25", "29"]);
 export const photoArticles = pick([
   "31",
