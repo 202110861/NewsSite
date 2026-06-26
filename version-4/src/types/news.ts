@@ -24,6 +24,7 @@ export interface Article {
   title: string;
   subtitle?: string;
   section: SectionId;
+  /** 목록·상세 상단 커버 이미지 (본문 body와 별도) */
   image?: string;
   isVideo?: boolean;
   videoUrl?: string;
