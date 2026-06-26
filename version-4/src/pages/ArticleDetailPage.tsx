@@ -88,7 +88,6 @@ export default function ArticleDetailPage() {
           <span>›</span>
           <span>{meta?.label ?? "뉴스"}</span>
         </nav>
-
         {/* 헤드라인 영역 */}
         <header>
           <SectionTag section={article.section} />
@@ -123,9 +122,8 @@ export default function ArticleDetailPage() {
             )}
           </div>
         </header>
-
         {/* 커버 — 영상 임베드 또는 대표 이미지 (본문과 별도) */}
-        {article.videoUrl && youtubeEmbedUrl(article.videoUrl) ? (
+        {article.videoUrl && youtubeEmbedUrl(article.videoUrl) && (
           <figure className="mt-6">
             <div className="aspect-video overflow-hidden rounded-lg bg-ink-100">
               <iframe
@@ -136,31 +134,17 @@ export default function ArticleDetailPage() {
                 allowFullScreen
               />
             </div>
-          </figure>
-        ) : (
-          article.image && (
-            <figure className="mt-6">
-              <div className="relative overflow-hidden rounded-lg bg-ink-100">
-                <img
-                  src={article.image}
-                  alt={article.title}
-                  className="aspect-[16/10] w-full object-cover"
-                />
-                {article.isVideo && (
-                  <span className="absolute inset-0 flex items-center justify-center">
-                    <span className="flex h-16 w-16 items-center justify-center rounded-full bg-ink-950/55 text-2xl text-white backdrop-blur-sm">
-                      ▶
-                    </span>
+            <div className="relative overflow-hidden rounded-lg bg-ink-100">
+              {article.isVideo && (
+                <span className="absolute inset-0 flex items-center justify-center">
+                  <span className="flex h-16 w-16 items-center justify-center rounded-full bg-ink-950/55 text-2xl text-white backdrop-blur-sm">
+                    ▶
                   </span>
-                )}
-              </div>
-              <figcaption className="mt-2 text-xs text-ink-500">
-                사진 = {meta?.label} 자료사진
-              </figcaption>
-            </figure>
-          )
+                </span>
+              )}
+            </div>
+          </figure>
         )}
-
         {/* 본문 — 문단·본문 이미지 블록 */}
         <div className="mt-7 flex flex-col gap-4">
           {article.body && article.body.length > 0
@@ -170,7 +154,6 @@ export default function ArticleDetailPage() {
                 0,
               )}
         </div>
-
         {/* 공유 / 기자 정보 */}
         <div className="mt-8 flex flex-wrap items-center justify-between gap-3 rounded-lg bg-paper-100 px-4 py-3.5">
           <p className="text-sm text-ink-700">
@@ -189,7 +172,6 @@ export default function ArticleDetailPage() {
             ))}
           </div>
         </div>
-
         {/* 이전/다음 기사 내비게이션 */}
         <nav className="mt-8 divide-y divide-ink-900/10 border-y border-ink-900/10">
           {next && (
