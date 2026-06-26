@@ -5,7 +5,41 @@ import { sectionMap } from "../data/sections";
 import SectionTag from "../components/SectionTag";
 import NewsCarousel from "../components/NewsCarousel";
 import { formatTimeAgo } from "../utils/format";
-import type { Article } from "../types/news";
+import type { Article, ArticleBodyBlock } from "../types/news";
+
+function youtubeEmbedUrl(url: string): string | null {
+  const match = url.match(
+    /(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([\w-]{11})/,
+  );
+  return match ? `https://www.youtube.com/embed/${match[1]}` : null;
+}
+
+function renderBodyBlock(block: ArticleBodyBlock, key: number) {
+  if (typeof block === "string") {
+    return (
+      <p key={key} className="text-base leading-[1.85] text-ink-800">
+        {block}
+      </p>
+    );
+  }
+
+  return (
+    <figure key={key}>
+      <div className="overflow-hidden rounded-lg bg-ink-100">
+        <img
+          src={block.src}
+          alt={block.caption ?? ""}
+          className="w-full object-cover"
+        />
+      </div>
+      {block.caption && (
+        <figcaption className="mt-2 text-xs text-ink-500">
+          {block.caption}
+        </figcaption>
+      )}
+    </figure>
+  );
+}
 
 function getRelatedArticles(current: Article, count = 6): Article[] {
   const sameSection = allArticlesSorted.filter(
@@ -18,13 +52,6 @@ function getRelatedArticles(current: Article, count = 6): Article[] {
     (a) => a.id !== current.id && a.section !== current.section,
   );
   return [...sameSection, ...others].slice(0, count);
-}
-
-function youtubeEmbedUrl(url: string): string | null {
-  const match = url.match(
-    /(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([\w-]{11})/,
-  );
-  return match ? `https://www.youtube.com/embed/${match[1]}` : null;
 }
 
 function getAdjacentArticles(current: Article) {
@@ -97,7 +124,7 @@ export default function ArticleDetailPage() {
           </div>
         </header>
 
-        {/* 대형 이미지 / 영상 */}
+        {/* 커버 — 영상 임베드 또는 대표 이미지 (본문과 별도) */}
         {article.videoUrl && youtubeEmbedUrl(article.videoUrl) ? (
           <figure className="mt-6">
             <div className="aspect-video overflow-hidden rounded-lg bg-ink-100">
@@ -116,8 +143,8 @@ export default function ArticleDetailPage() {
               <div className="relative overflow-hidden rounded-lg bg-ink-100">
                 <img
                   src={article.image}
-                  alt=""
-                  className="aspect-[4/3] w-full object-cover"
+                  alt={article.title}
+                  className="aspect-[16/10] w-full object-cover"
                 />
                 {article.isVideo && (
                   <span className="absolute inset-0 flex items-center justify-center">
@@ -127,34 +154,21 @@ export default function ArticleDetailPage() {
                   </span>
                 )}
               </div>
+              <figcaption className="mt-2 text-xs text-ink-500">
+                사진 = {meta?.label} 자료사진
+              </figcaption>
             </figure>
           )
         )}
 
-        {/* 본문 */}
-        <div className="mt-7 flex flex-col gap-5">
-          {(
-            article.body ?? [article.excerpt ?? "본문 내용이 준비 중입니다."]
-          ).map((block, i) =>
-            typeof block === "string" ? (
-              <p key={i} className="text-base leading-[1.85] text-ink-800">
-                {block}
-              </p>
-            ) : (
-              <figure key={i}>
-                <img
-                  src={block.src}
-                  alt={block.caption ?? ""}
-                  className="w-full rounded-lg object-cover"
-                />
-                {block.caption && (
-                  <figcaption className="mt-2 text-xs text-ink-500">
-                    {block.caption}
-                  </figcaption>
-                )}
-              </figure>
-            ),
-          )}
+        {/* 본문 — 문단·본문 이미지 블록 */}
+        <div className="mt-7 flex flex-col gap-4">
+          {article.body && article.body.length > 0
+            ? article.body.map((block, i) => renderBodyBlock(block, i))
+            : renderBodyBlock(
+                article.excerpt ?? "본문 내용이 준비 중입니다.",
+                0,
+              )}
         </div>
 
         {/* 공유 / 기자 정보 */}
@@ -214,6 +228,7 @@ export default function ArticleDetailPage() {
         <NewsCarousel
           title={`${meta?.label ?? ""} 관련기사`}
           articles={related}
+          moreHref={`/section/${article.section}`}
         />
       )}
     </>

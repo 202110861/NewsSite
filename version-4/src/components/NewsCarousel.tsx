@@ -1,25 +1,25 @@
-import { useRef } from 'react'
-import { Link } from 'react-router-dom'
-import type { Article } from '../types/news'
-import SectionTag from './SectionTag'
-import { formatTimeAgo } from '../utils/format'
+import { useRef } from "react";
+import { Link } from "react-router-dom";
+import type { Article } from "../types/news";
+import SectionTag from "./SectionTag";
+import { formatTimeAgo } from "../utils/format";
 
 interface Props {
-  title: string
-  articles: Article[]
-  moreHref?: string
+  title: string;
+  articles: Article[];
+  moreHref?: string;
 }
 
-export default function NewsCarousel({ title, articles, moreHref = '#' }: Props) {
-  const scrollerRef = useRef<HTMLDivElement>(null)
+export default function NewsCarousel({ title, articles, moreHref }: Props) {
+  const scrollerRef = useRef<HTMLDivElement>(null);
 
   function scrollBy(dir: 1 | -1) {
-    const el = scrollerRef.current
-    if (!el) return
-    el.scrollBy({ left: dir * el.clientWidth * 0.85, behavior: 'smooth' })
+    const el = scrollerRef.current;
+    if (!el) return;
+    el.scrollBy({ left: dir * el.clientWidth * 0.85, behavior: "smooth" });
   }
 
-  if (articles.length === 0) return null
+  if (articles.length === 0) return null;
 
   return (
     <section className="mx-auto max-w-6xl px-4 py-7 sm:px-6">
@@ -27,12 +27,14 @@ export default function NewsCarousel({ title, articles, moreHref = '#' }: Props)
         <h2 className="font-display text-lg font-black tracking-tight text-ink-900 sm:text-xl">
           {title}
         </h2>
-        <a
-          href={moreHref}
-          className="text-xs font-semibold text-ink-500 hover:text-flash-600"
-        >
-          더보기 →
-        </a>
+        {moreHref && (
+          <Link
+            to={moreHref}
+            className="text-xs font-semibold text-ink-500 hover:text-flash-600"
+          >
+            더보기 →
+          </Link>
+        )}
       </div>
 
       <div className="relative">
@@ -41,7 +43,11 @@ export default function NewsCarousel({ title, articles, moreHref = '#' }: Props)
           className="flex gap-4 overflow-x-auto scroll-smooth scrollbar-hide"
         >
           {articles.map((a) => (
-            <Link key={a.id} to={`/article/${a.id}`} className="group w-44 shrink-0 sm:w-56">
+            <Link
+              key={a.id}
+              to={`/article/${a.id}`}
+              className="group w-44 shrink-0 sm:w-56"
+            >
               <div className="relative overflow-hidden rounded-md bg-ink-100">
                 <img
                   src={a.image}
@@ -62,7 +68,9 @@ export default function NewsCarousel({ title, articles, moreHref = '#' }: Props)
                 <h3 className="line-clamp-2 text-sm font-bold leading-snug text-ink-900 group-hover:text-flash-700">
                   {a.title}
                 </h3>
-                <p className="text-xs text-ink-500">{formatTimeAgo(a.publishedAt)}</p>
+                <p className="text-xs text-ink-500">
+                  {formatTimeAgo(a.publishedAt)}
+                </p>
               </div>
             </Link>
           ))}
@@ -87,5 +95,5 @@ export default function NewsCarousel({ title, articles, moreHref = '#' }: Props)
         </button>
       </div>
     </section>
-  )
+  );
 }
