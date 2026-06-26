@@ -7,15 +7,9 @@ export default function Header() {
 
   return (
     <div className="border-b border-ink-900/10 bg-paper-50">
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-1 sm:px-6">
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
         <Link to="/" className="flex items-baseline gap-2">
-          {/* <span className="font-display text-2xl font-black tracking-tight text-ink-900 sm:text-3xl">
-            데일리
-          </span>
-          <span className="font-display text-2xl font-black tracking-tight text-flash-600 sm:text-3xl">
-            가판대
-          </span> */}
-          <img src="/logo.png" alt="logo" className="w-30" />
+          <img src="/logo.png" alt="logo" className="w-35" />
         </Link>
 
         <div className="relative">
