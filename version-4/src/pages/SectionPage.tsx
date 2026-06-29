@@ -56,13 +56,15 @@ export default function SectionPage() {
         <div className="grid gap-x-5 gap-y-7 sm:grid-cols-2 lg:grid-cols-3">
           {articles.map((a) => (
             <Link key={a.id} to={`/article/${a.id}`} className="group">
-              <div className="relative overflow-hidden rounded-md bg-ink-100">
-                <img
-                  src={resolveMediaUrl(a.image)}
-                  alt=""
-                  className="aspect-[4/3] w-full object-cover transition duration-500 group-hover:scale-105"
-                  loading="lazy"
-                />
+              <div className="relative aspect-[4/3] overflow-hidden rounded-md bg-ink-100">
+                {a.image && (
+                  <img
+                    src={resolveMediaUrl(a.image)}
+                    alt=""
+                    className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                    loading="lazy"
+                  />
+                )}
                 {a.isVideo && (
                   <span className="absolute inset-0 flex items-center justify-center">
                     <span className="flex h-10 w-10 items-center justify-center rounded-full bg-ink-950/60 text-white backdrop-blur-sm">

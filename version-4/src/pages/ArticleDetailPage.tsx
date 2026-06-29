@@ -4,7 +4,6 @@ import { allArticlesSorted, getArticleById } from "../data/articles";
 import { sectionMap } from "../data/sections";
 import SectionTag from "../components/SectionTag";
 import NewsCarousel from "../components/NewsCarousel";
-import { formatTimeAgo } from "../utils/format";
 import { resolveMediaUrl } from "../utils/media";
 import type { Article, ArticleBodyBlock } from "../types/news";
 
