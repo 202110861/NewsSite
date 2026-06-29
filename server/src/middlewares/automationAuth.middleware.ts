@@ -1,0 +1,11 @@
+import type { NextFunction, Request, Response } from 'express'
+import { env } from '../config/env.js'
+
+export function automationAuth(req: Request, res: Response, next: NextFunction): void {
+  const key = req.headers['x-api-key']
+  if (key !== env.AUTOMATION_API_KEY) {
+    res.status(401).json({ message: '유효하지 않은 API Key입니다.' })
+    return
+  }
+  next()
+}
