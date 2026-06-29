@@ -166,6 +166,11 @@ export default function ArticleDetailPage() {
                     i + Math.ceil(article.body!.length / 2),
                   ),
                 )}
+              {article.isAI && (
+                <p className="text-sm text-ink-500">
+                  이 기사는 AI가 작성하였습니다.
+                </p>
+              )}
             </>
           ) : (
             renderBodyBlock(article.excerpt ?? "본문 내용이 준비 중입니다.", 0)

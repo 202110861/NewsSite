@@ -34,6 +34,7 @@ export interface Article {
   body?: ArticleBodyBlock[];
   reporter?: string;
   viewCount?: number;
+  isAI?: boolean;
 }
 
 export interface HotIssueItem {
