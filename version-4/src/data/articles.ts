@@ -1315,3 +1315,4 @@ export function searchArticles(query: string): Article[] {
     });
   });
 }
+
