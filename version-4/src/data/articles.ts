@@ -1274,7 +1274,7 @@ function pick(ids: string[]): Article[] {
   return ids.map((id) => articlesById[id]).filter(Boolean) as Article[];
 }
 
-export const heroArticles = pick(["43", "6", "1", "27"]);
+export const heroArticles = pick(["50", "43", "6", "1"]);
 
 export const hotIssues: HotIssueItem[] = [
   { id: "1", title: articlesById["1"].title },
