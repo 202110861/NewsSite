@@ -1,0 +1,12 @@
+{
+  "name": "news-site",
+  "private": true,
+  "scripts": {
+    "dev:all": "concurrently \"npm run dev --prefix server\" \"npm run dev --prefix version-4\"",
+    "dev:server": "npm run dev --prefix server",
+    "dev:front": "npm run dev --prefix version-4"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
