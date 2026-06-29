@@ -4,6 +4,7 @@ import { allArticlesSorted } from '../data/articles'
 import { sectionMap } from '../data/sections'
 import SectionTag from '../components/SectionTag'
 import { formatTimeAgo } from '../utils/format'
+import { resolveMediaUrl } from '../utils/media'
 import type { SectionId } from '../types/news'
 
 export default function SectionPage() {
@@ -55,7 +56,7 @@ export default function SectionPage() {
             <Link key={a.id} to={`/article/${a.id}`} className="group">
               <div className="relative overflow-hidden rounded-md bg-ink-100">
                 <img
-                  src={a.image}
+                  src={resolveMediaUrl(a.image ?? '')}
                   alt=""
                   className="aspect-[4/3] w-full object-cover transition duration-500 group-hover:scale-105"
                   loading="lazy"

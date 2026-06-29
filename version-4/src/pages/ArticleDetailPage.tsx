@@ -5,6 +5,7 @@ import { sectionMap } from "../data/sections";
 import SectionTag from "../components/SectionTag";
 import NewsCarousel from "../components/NewsCarousel";
 import { formatTimeAgo } from "../utils/format";
+import { resolveMediaUrl } from "../utils/media";
 import type { Article, ArticleBodyBlock } from "../types/news";
 
 function youtubeEmbedUrl(url: string): string | null {
@@ -17,7 +18,10 @@ function youtubeEmbedUrl(url: string): string | null {
 function renderBodyBlock(block: ArticleBodyBlock, key: number) {
   if (typeof block === "string") {
     return (
-      <p key={key} className="text-base leading-[1.85] text-ink-800">
+      <p
+        key={key}
+        className="whitespace-pre-line text-base leading-[1.85] text-ink-800"
+      >
         {block}
       </p>
     );
@@ -27,7 +31,7 @@ function renderBodyBlock(block: ArticleBodyBlock, key: number) {
     <figure key={key}>
       <div className="overflow-hidden rounded-lg bg-ink-100">
         <img
-          src={block.src}
+          src={resolveMediaUrl(block.src)}
           alt={block.caption ?? ""}
           className="w-full object-cover"
         />
@@ -147,12 +151,25 @@ export default function ArticleDetailPage() {
         )}
         {/* 본문 — 문단·본문 이미지 블록 */}
         <div className="mt-7 flex flex-col gap-4">
-          {article.body && article.body.length > 0
-            ? article.body.map((block, i) => renderBodyBlock(block, i))
-            : renderBodyBlock(
-                article.excerpt ?? "본문 내용이 준비 중입니다.",
-                0,
-              )}
+          <p className="text-lg font-bold">{article.subtitle}</p>
+          {article.body && article.body.length > 0 ? (
+            <>
+              {article.body
+                .slice(0, Math.ceil(article.body.length / 2))
+                .map((block, i) => renderBodyBlock(block, i))}
+              {/* <AdSlot slotKey="article_inline" className="my-2 w-full" /> */}
+              {article.body
+                .slice(Math.ceil(article.body.length / 2))
+                .map((block, i) =>
+                  renderBodyBlock(
+                    block,
+                    i + Math.ceil(article.body!.length / 2),
+                  ),
+                )}
+            </>
+          ) : (
+            renderBodyBlock(article.excerpt ?? "본문 내용이 준비 중입니다.", 0)
+          )}
         </div>
         {/* 공유 / 기자 정보 */}
         <div className="mt-8 flex flex-wrap items-center justify-between gap-3 rounded-lg bg-paper-100 px-4 py-3.5">

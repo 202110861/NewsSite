@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import type { Article } from '../types/news'
 import SectionTag from './SectionTag'
 import { formatTimeAgo } from '../utils/format'
+import { resolveMediaUrl } from '../utils/media'
 
 export default function HeroHeadlines({ articles }: { articles: Article[] }) {
   const [main, ...rest] = articles
@@ -17,7 +18,7 @@ export default function HeroHeadlines({ articles }: { articles: Article[] }) {
           className="group relative block overflow-hidden rounded-lg bg-ink-950"
         >
           <img
-            src={main.image}
+            src={resolveMediaUrl(main.image ?? '')}
             alt=""
             className="aspect-[16/10] w-full object-cover opacity-90 transition duration-500 group-hover:scale-105 group-hover:opacity-100"
             loading="eager"
@@ -44,7 +45,7 @@ export default function HeroHeadlines({ articles }: { articles: Article[] }) {
             >
               <div className="h-24 w-32 shrink-0 overflow-hidden rounded-md bg-ink-100 sm:h-28 sm:w-36">
                 <img
-                  src={a.image}
+                  src={resolveMediaUrl(a.image ?? '')}
                   alt=""
                   className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                   loading="lazy"
