@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { searchArticles } from "../data/articles";
 import SectionTag from "../components/SectionTag";
 import { formatTimeAgo } from "../utils/format";
+import { resolveMediaUrl } from "../utils/media";
 
 export default function SearchPage() {
   const [searchParams] = useSearchParams();
@@ -96,7 +97,7 @@ export default function SearchPage() {
                 {a.image && (
                   <div className="h-20 w-28 shrink-0 overflow-hidden rounded-md bg-ink-100 sm:h-24 sm:w-32">
                     <img
-                      src={a.image}
+                      src={resolveMediaUrl(a.image)}
                       alt=""
                       className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                       loading="lazy"
