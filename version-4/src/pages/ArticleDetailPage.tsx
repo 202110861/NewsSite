@@ -153,6 +153,12 @@ export default function ArticleDetailPage() {
                 article.excerpt ?? "본문 내용이 준비 중입니다.",
                 0,
               )}
+
+          {article.isAI && (
+            <p className="text-sm text-ink-500">
+              이 기사는 AI가 작성하였습니다.
+            </p>
+          )}
         </div>
         {/* 공유 / 기자 정보 */}
         <div className="mt-8 flex flex-wrap items-center justify-between gap-3 rounded-lg bg-paper-100 px-4 py-3.5">
