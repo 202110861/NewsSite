@@ -5,6 +5,14 @@ import { fileURLToPath } from 'node:url'
 const SITE_NAME = '경제인뉴스'
 const HOME_DESCRIPTION =
   '경기 김포 기반 종합 뉴스 포털 — 정치, 경제, 사회, 문화, 연예, 지역뉴스를 전합니다.'
+const IMAGE_EXTENSIONS = new Set([
+  'jpg',
+  'jpeg',
+  'png',
+  'gif',
+  'webp',
+  'svg',
+])
 
 function escapeHtml(value) {
   return value
@@ -18,15 +26,45 @@ function resolveSiteUrl() {
   const raw =
     process.env.VITE_SITE_URL ||
     process.env.RENDER_EXTERNAL_URL ||
-    'https://경제인뉴스.com'
+    'https://newsin.kr'
 
   return raw.replace(/\/$/, '')
 }
 
-function toAbsoluteImageUrl(siteUrl, image, fallback) {
+function filenameFromSrc(src) {
+  return src.replace(/^\/?(?:src\/)?images\//, '').split('/').pop() ?? src
+}
+
+/** Vite 빌드 결과(dist/assets)에서 원본 파일명 → /assets/해시파일 경로 매핑 */
+function buildAssetMap(outDir) {
+  const assetsDir = path.join(outDir, 'assets')
+  const map = new Map()
+
+  if (!fs.existsSync(assetsDir)) return map
+
+  for (const file of fs.readdirSync(assetsDir)) {
+    const ext = file.split('.').pop()?.toLowerCase()
+    if (!ext || !IMAGE_EXTENSIONS.has(ext)) continue
+
+    // pg1-Cva78-BF.jpg → pg1.jpg / image_a16a17-CBIGLGia.png → image_a16a17.png
+    const dashIndex = file.indexOf('-')
+    if (dashIndex === -1) continue
+
+    const base = file.slice(0, dashIndex)
+    map.set(`${base}.${ext}`, `/assets/${file}`)
+  }
+
+  return map
+}
+
+function resolveOgImageUrl(siteUrl, image, assetMap, fallback) {
   const candidate = image || fallback
   if (!candidate) return `${siteUrl}/og-default.jpg`
   if (/^https?:\/\//i.test(candidate)) return candidate
+
+  const filename = filenameFromSrc(candidate)
+  const bundled = assetMap.get(filename)
+  if (bundled) return `${siteUrl}${bundled}`
 
   const normalized = candidate.startsWith('/') ? candidate : `/${candidate}`
   return `${siteUrl}${normalized}`
@@ -65,8 +103,17 @@ function injectMeta(html, meta) {
   return cleaned.replace('</head>', `${buildSeoTags(meta)}\n  </head>`)
 }
 
+function writeOgPage(outDir, segments, html) {
+  const pageDir = path.join(outDir, ...segments)
+  fs.mkdirSync(pageDir, { recursive: true })
+  fs.writeFileSync(path.join(pageDir, 'index.html'), html)
+}
+
 async function main() {
-  const { articlesById, heroArticles } = await import('../src/data/articles.ts')
+  const { articlesById, heroArticles, allArticlesSorted } = await import(
+    '../src/data/articles.ts'
+  )
+  const { sections } = await import('../src/data/sections.ts')
 
   const outDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../dist')
   const indexPath = path.join(outDir, 'index.html')
@@ -77,7 +124,12 @@ async function main() {
 
   const baseHtml = fs.readFileSync(indexPath, 'utf-8')
   const siteUrl = resolveSiteUrl()
-  const defaultImage = toAbsoluteImageUrl(siteUrl, heroArticles[0]?.image)
+  const assetMap = buildAssetMap(outDir)
+  const defaultImage = resolveOgImageUrl(
+    siteUrl,
+    heroArticles[0]?.image,
+    assetMap,
+  )
 
   fs.writeFileSync(
     indexPath,
@@ -96,21 +148,40 @@ async function main() {
       article.subtitle?.trim() ||
       article.title
 
-    const articleHtml = injectMeta(baseHtml, {
-      title: `${article.title} - ${SITE_NAME}`,
-      description,
-      url: `${siteUrl}/article/${article.id}`,
-      image: toAbsoluteImageUrl(siteUrl, article.image, defaultImage),
-      type: 'article',
-    })
+    writeOgPage(
+      outDir,
+      ['article', article.id],
+      injectMeta(baseHtml, {
+        title: `${article.title} - ${SITE_NAME}`,
+        description,
+        url: `${siteUrl}/article/${article.id}`,
+        image: resolveOgImageUrl(siteUrl, article.image, assetMap, defaultImage),
+        type: 'article',
+      }),
+    )
+  }
 
-    const articleDir = path.join(outDir, 'article', article.id)
-    fs.mkdirSync(articleDir, { recursive: true })
-    fs.writeFileSync(path.join(articleDir, 'index.html'), articleHtml)
+  for (const section of sections) {
+    const articles = allArticlesSorted.filter((a) => a.section === section.id)
+    const lead = articles.find((a) => a.image) ?? articles[0]
+
+    writeOgPage(
+      outDir,
+      ['section', section.id],
+      injectMeta(baseHtml, {
+        title: `${section.label} - ${SITE_NAME}`,
+        description: `${section.label} 섹션 최신 뉴스를 확인하세요.`,
+        url: `${siteUrl}/section/${section.id}`,
+        image: lead
+          ? resolveOgImageUrl(siteUrl, lead.image, assetMap, defaultImage)
+          : defaultImage,
+        type: 'website',
+      }),
+    )
   }
 
   console.log(
-    `[prerender-og] ${Object.keys(articlesById).length} article pages + home (site: ${siteUrl})`,
+    `[prerender-og] ${Object.keys(articlesById).length} articles + ${sections.length} sections + home (site: ${siteUrl})`,
   )
 }
 

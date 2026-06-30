@@ -5,7 +5,7 @@ import { allArticlesSorted, getArticleById } from "../data/articles";
 import { sectionMap } from "../data/sections";
 import SectionTag from "../components/SectionTag";
 import NewsCarousel from "../components/NewsCarousel";
-import { resolveMediaUrl } from "../utils/media";
+import { resolveMediaUrl, resolveAbsoluteMediaUrl } from "../utils/media";
 import type { Article, ArticleBodyBlock } from "../types/news";
 
 function youtubeEmbedUrl(url: string): string | null {
@@ -80,6 +80,11 @@ export default function ArticleDetailPage() {
   const meta = sectionMap[article.section];
   const related = getRelatedArticles(article);
   const { prev, next } = getAdjacentArticles(article);
+  const pageUrl =
+    import.meta.env.VITE_SITE_URL?.replace(/\/$/, "") ||
+    (typeof window !== "undefined"
+      ? window.location.origin
+      : "https://newsin.kr");
 
   return (
     <>
@@ -87,11 +92,13 @@ export default function ArticleDetailPage() {
         <title>{article.title} - 경제인뉴스</title>
         <meta property="og:title" content={article.title} />
         <meta property="og:description" content={article.excerpt} />
-        <meta property="og:image" content={article.image} />
         <meta
-          property="og:url"
-          content={`https://경제인뉴스.com/article/${article.id}`}
+          property="og:image"
+          content={
+            article.image ? resolveAbsoluteMediaUrl(article.image) : undefined
+          }
         />
+        <meta property="og:url" content={`${pageUrl}/article/${article.id}`} />
       </Helmet>
       <article className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
         {/* 브레드크럼 */}

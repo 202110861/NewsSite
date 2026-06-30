@@ -37,3 +37,17 @@ export function resolveMediaUrl(src: string): string {
 
   return src.startsWith("/") ? src : `/${src}`;
 }
+
+/** OG·공유용 절대 URL (로컬 번들 이미지 포함) */
+export function resolveAbsoluteMediaUrl(src: string): string {
+  const resolved = resolveMediaUrl(src);
+  if (!resolved) return "";
+  if (/^https?:\/\//i.test(resolved)) return resolved;
+
+  const base = (
+    import.meta.env.VITE_SITE_URL ||
+    (typeof window !== "undefined" ? window.location.origin : "https://newsin.kr")
+  ).replace(/\/$/, "");
+
+  return `${base}${resolved.startsWith("/") ? resolved : `/${resolved}`}`;
+}
