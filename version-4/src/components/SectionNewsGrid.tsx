@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import type { Article, SectionId } from "../types/news";
 import SectionTag from "./SectionTag";
+import { resolveMediaUrl } from "../utils/media";
 
 interface Props {
   data: Record<string, Article[]>;
@@ -40,7 +41,7 @@ export default function SectionNewsGrid({ data }: Props) {
                     >
                       {a.image && (
                         <img
-                          src={a.image}
+                          src={resolveMediaUrl(a.image)}
                           alt=""
                           className="h-12 w-16 shrink-0 rounded object-cover"
                           loading="lazy"
