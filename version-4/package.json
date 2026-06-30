@@ -30,7 +30,6 @@
   },
   "reactSnap": {
     "source": "dist",
-    "puppeteerExecutablePath": "C:/Program Files/Google/Chrome/Application/chrome.exe",
     "include": [
       "/",
       "/search"
