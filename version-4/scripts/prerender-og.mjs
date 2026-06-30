@@ -1,5 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 const SITE_NAME = '경제인뉴스'
 const HOME_DESCRIPTION =
@@ -64,57 +65,56 @@ function injectMeta(html, meta) {
   return cleaned.replace('</head>', `${buildSeoTags(meta)}\n  </head>`)
 }
 
-export default function prerenderOgPlugin() {
-  return {
-    name: 'prerender-og',
-    apply: 'build',
-    async closeBundle() {
-      const { articlesById, heroArticles } = await import('../src/data/articles.ts')
+async function main() {
+  const { articlesById, heroArticles } = await import('../src/data/articles.ts')
 
-      const outDir = path.resolve(process.cwd(), 'dist')
-      const indexPath = path.join(outDir, 'index.html')
+  const outDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../dist')
+  const indexPath = path.join(outDir, 'index.html')
 
-      if (!fs.existsSync(indexPath)) {
-        throw new Error('dist/index.html not found — run vite build first.')
-      }
-
-      const baseHtml = fs.readFileSync(indexPath, 'utf-8')
-      const siteUrl = resolveSiteUrl()
-      const defaultImage = toAbsoluteImageUrl(siteUrl, heroArticles[0]?.image)
-
-      fs.writeFileSync(
-        indexPath,
-        injectMeta(baseHtml, {
-          title: SITE_NAME,
-          description: HOME_DESCRIPTION,
-          url: `${siteUrl}/`,
-          image: defaultImage,
-          type: 'website',
-        }),
-      )
-
-      for (const article of Object.values(articlesById)) {
-        const description =
-          article.excerpt?.trim() ||
-          article.subtitle?.trim() ||
-          article.title
-
-        const articleHtml = injectMeta(baseHtml, {
-          title: `${article.title} - ${SITE_NAME}`,
-          description,
-          url: `${siteUrl}/article/${article.id}`,
-          image: toAbsoluteImageUrl(siteUrl, article.image, defaultImage),
-          type: 'article',
-        })
-
-        const articleDir = path.join(outDir, 'article', article.id)
-        fs.mkdirSync(articleDir, { recursive: true })
-        fs.writeFileSync(path.join(articleDir, 'index.html'), articleHtml)
-      }
-
-      console.log(
-        `[prerender-og] ${Object.keys(articlesById).length} article pages + home (site: ${siteUrl})`,
-      )
-    },
+  if (!fs.existsSync(indexPath)) {
+    throw new Error('dist/index.html not found — run vite build first.')
   }
+
+  const baseHtml = fs.readFileSync(indexPath, 'utf-8')
+  const siteUrl = resolveSiteUrl()
+  const defaultImage = toAbsoluteImageUrl(siteUrl, heroArticles[0]?.image)
+
+  fs.writeFileSync(
+    indexPath,
+    injectMeta(baseHtml, {
+      title: SITE_NAME,
+      description: HOME_DESCRIPTION,
+      url: `${siteUrl}/`,
+      image: defaultImage,
+      type: 'website',
+    }),
+  )
+
+  for (const article of Object.values(articlesById)) {
+    const description =
+      article.excerpt?.trim() ||
+      article.subtitle?.trim() ||
+      article.title
+
+    const articleHtml = injectMeta(baseHtml, {
+      title: `${article.title} - ${SITE_NAME}`,
+      description,
+      url: `${siteUrl}/article/${article.id}`,
+      image: toAbsoluteImageUrl(siteUrl, article.image, defaultImage),
+      type: 'article',
+    })
+
+    const articleDir = path.join(outDir, 'article', article.id)
+    fs.mkdirSync(articleDir, { recursive: true })
+    fs.writeFileSync(path.join(articleDir, 'index.html'), articleHtml)
+  }
+
+  console.log(
+    `[prerender-og] ${Object.keys(articlesById).length} article pages + home (site: ${siteUrl})`,
+  )
 }
+
+main().catch((error) => {
+  console.error(error)
+  process.exit(1)
+})
