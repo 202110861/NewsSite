@@ -50,12 +50,14 @@ export default function NewsCarousel({ title, articles, moreHref }: Props) {
               className="group w-44 shrink-0 sm:w-56"
             >
               <div className="relative overflow-hidden rounded-md bg-ink-100">
-                <img
-                  src={resolveMediaUrl(a.image)}
-                  alt=""
-                  className="aspect-[4/3] w-full object-cover transition duration-500 group-hover:scale-105"
-                  loading="lazy"
-                />
+                {a.image && (
+                  <img
+                    src={resolveMediaUrl(a.image)}
+                    alt=""
+                    className="aspect-[4/3] w-full object-cover transition duration-500 group-hover:scale-105"
+                    loading="lazy"
+                  />
+                )}
                 {a.isVideo && (
                   <span className="absolute inset-0 flex items-center justify-center">
                     <span className="flex h-10 w-10 items-center justify-center rounded-full bg-ink-950/60 text-white backdrop-blur-sm">
