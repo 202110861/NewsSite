@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import type { Article } from "../types/news";
 import SectionTag from "./SectionTag";
 import { formatTimeAgo } from "../utils/format";
+import { resolveMediaUrl } from "../utils/media";
 
 interface Props {
   title: string;
@@ -50,7 +51,7 @@ export default function NewsCarousel({ title, articles, moreHref }: Props) {
             >
               <div className="relative overflow-hidden rounded-md bg-ink-100">
                 <img
-                  src={a.image}
+                  src={resolveMediaUrl(a.image)}
                   alt=""
                   className="aspect-[4/3] w-full object-cover transition duration-500 group-hover:scale-105"
                   loading="lazy"
