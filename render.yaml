@@ -9,6 +9,10 @@ services:
       - key: VITE_SITE_URL
         sync: false
     routes:
+      # OG prerender HTML: /article/50 → /article/50/index.html (catch-all보다 위에)
+      - type: rewrite
+        source: /article/:id
+        destination: /article/:id/index.html
       - type: rewrite
         source: /*
         destination: /index.html
