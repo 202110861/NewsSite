@@ -1,3 +1,4 @@
+import { Helmet } from "react-helmet-async";
 import { Link, Navigate, useParams } from "react-router-dom";
 import { useEffect } from "react";
 import { allArticlesSorted, getArticleById } from "../data/articles";
@@ -82,6 +83,16 @@ export default function ArticleDetailPage() {
 
   return (
     <>
+      <Helmet>
+        <title>{article.title} - 경제인뉴스</title>
+        <meta property="og:title" content={article.title} />
+        <meta property="og:description" content={article.excerpt} />
+        <meta property="og:image" content={article.image} />
+        <meta
+          property="og:url"
+          content={`https://경제인뉴스.com/article/${article.id}`}
+        />
+      </Helmet>
       <article className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
         {/* 브레드크럼 */}
         <nav className="mb-5 flex items-center gap-1.5 text-xs text-ink-500">
