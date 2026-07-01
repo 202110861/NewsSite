@@ -14,6 +14,7 @@ export const sections: Section[] = [
   { id: "event", label: "이벤트/행사", accent: "bg-section-event" },
   { id: "video", label: "영상뉴스", accent: "bg-section-video" },
   { id: "cardNews", label: "카드뉴스", accent: "bg-section-cardNews" },
+  { id: "shorts", label: "숏컷뉴스", accent: "bg-section-shorts" },
 ];
 
 export const sectionMap: Record<string, Section> = sections.reduce(
