@@ -10,6 +10,8 @@ const accentBg: Record<SectionId, string> = {
   local: 'bg-section-local',
   event: 'bg-section-event',
   video: 'bg-section-video',
+  cardNews: 'bg-section-cardNews',
+  shorts: 'bg-section-shorts',
 }
 
 export default function SectionTag({ section }: { section: SectionId }) {
