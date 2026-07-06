@@ -15,6 +15,35 @@ export async function listPublishedArticles(params?: { sectionId?: string; limit
   return articles.map(toFrontendArticle)
 }
 
+export async function searchPublishedArticles(query: string) {
+  const q = query.trim()
+  if (!q) return []
+
+  const articles = await prisma.article.findMany({
+    where: {
+      status: 'PUBLISHED',
+      OR: [
+        { title: { contains: q, mode: 'insensitive' } },
+        { excerpt: { contains: q, mode: 'insensitive' } },
+        {
+          bodySections: {
+            some: {
+              paragraphs: {
+                some: { content: { contains: q, mode: 'insensitive' } },
+              },
+            },
+          },
+        },
+      ],
+    },
+    include: articleInclude,
+    orderBy: { publishedAt: 'desc' },
+    take: 100,
+  })
+
+  return articles.map(toFrontendArticle)
+}
+
 export async function getPublishedArticle(id: string) {
   const article = await prisma.article.findFirst({
     where: { id, status: 'PUBLISHED' },

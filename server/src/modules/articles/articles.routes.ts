@@ -14,6 +14,16 @@ articlesRouter.get('/', async (req, res, next) => {
   }
 })
 
+articlesRouter.get('/search', async (req, res, next) => {
+  try {
+    const q = typeof req.query.q === 'string' ? req.query.q : ''
+    const articles = await articlesService.searchPublishedArticles(q)
+    res.json(articles)
+  } catch (err) {
+    next(err)
+  }
+})
+
 articlesRouter.get('/:id', async (req, res, next) => {
   try {
     const article = await articlesService.getPublishedArticle(req.params.id)
