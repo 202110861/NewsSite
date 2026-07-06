@@ -10,6 +10,7 @@ import { adminArticlesRouter, adminStatsRouter } from './modules/admin/admin.rou
 import { subscriptionsRouter } from './modules/subscriptions/subscriptions.routes.js'
 import { paymentsRouter } from './modules/payments/payments.routes.js'
 import { adsRouter, adminAdsRouter } from './modules/ads/ads.routes.js'
+import { sectionsRouter } from './modules/sections/sections.routes.js'
 
 export function createApp() {
   const app = express()
@@ -30,6 +31,7 @@ export function createApp() {
   app.use('/api/auth', authRouter)
   app.use('/api/users', usersRouter)
   app.use('/api/articles', articlesRouter)
+  app.use('/api/sections', sectionsRouter)
   app.use('/api/automation', automationRouter)
   app.use('/api/admin/articles', adminArticlesRouter)
   app.use('/api/admin/stats', adminStatsRouter)

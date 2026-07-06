@@ -12,6 +12,8 @@ const sections = [
   { id: 'local', label: '지역뉴스' },
   { id: 'event', label: '이벤트/행사' },
   { id: 'video', label: '영상뉴스' },
+  { id: 'cardNews', label: '카드뉴스' },
+  { id: 'shorts', label: '숏컷뉴스' },
 ]
 
 const adSlots = [
