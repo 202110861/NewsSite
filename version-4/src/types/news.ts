@@ -6,7 +6,8 @@ export type SectionId =
   | "entertainment"
   | "local"
   | "event"
-  | "video";
+  | "video"
+  | "cardNews";
 
 export interface Section {
   id: SectionId;
