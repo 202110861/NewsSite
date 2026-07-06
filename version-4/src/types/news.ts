@@ -20,6 +20,7 @@ export type ArticleBodyBlock =
   | string
   | { type: "image"; src: string; caption?: string };
 
+/* 기사 타입 */
 export interface Article {
   id: string;
   title: string;
