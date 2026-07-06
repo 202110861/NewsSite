@@ -1,6 +1,6 @@
 import { Link, Navigate, useParams } from "react-router-dom";
-import { useEffect } from "react";
-import { allArticlesSorted, getArticleById } from "../data/articles";
+import { useEffect, useState } from "react";
+import { fetchArticle, fetchArticles } from "../lib/articles";
 import { sectionMap } from "../data/sections";
 import SectionTag from "../components/SectionTag";
 import NewsCarousel from "../components/NewsCarousel";
@@ -45,46 +45,85 @@ function renderBodyBlock(block: ArticleBodyBlock, key: number) {
   );
 }
 
-function getRelatedArticles(current: Article, count = 6): Article[] {
-  const sameSection = allArticlesSorted.filter(
+function getRelatedArticles(all: Article[], current: Article, count = 6) {
+  const sameSection = all.filter(
     (a) => a.id !== current.id && a.section === current.section,
   );
   if (sameSection.length >= count) return sameSection.slice(0, count);
 
-  // 같은 섹션 기사가 부족하면 다른 최신 기사로 채움
-  const others = allArticlesSorted.filter(
+  const others = all.filter(
     (a) => a.id !== current.id && a.section !== current.section,
   );
   return [...sameSection, ...others].slice(0, count);
 }
 
-function getAdjacentArticles(current: Article) {
-  const idx = allArticlesSorted.findIndex((a) => a.id === current.id);
-  const prev = idx >= 0 ? allArticlesSorted[idx + 1] : undefined; // 더 과거 기사
-  const next = idx > 0 ? allArticlesSorted[idx - 1] : undefined; // 더 최신 기사
+function getAdjacentArticles(all: Article[], current: Article) {
+  const idx = all.findIndex((a) => a.id === current.id);
+  const prev = idx >= 0 ? all[idx + 1] : undefined;
+  const next = idx > 0 ? all[idx - 1] : undefined;
   return { prev, next };
 }
 
 export default function ArticleDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const article = id ? getArticleById(id) : undefined;
+  const [article, setArticle] = useState<Article | null>(null);
+  const [allArticles, setAllArticles] = useState<Article[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [id]);
 
-  if (!article) {
+  useEffect(() => {
+    if (!id) return;
+
+    let cancelled = false;
+    setLoading(true);
+    setNotFound(false);
+
+    Promise.all([fetchArticle(id), fetchArticles({ limit: 100 })])
+      .then(([detail, list]) => {
+        if (cancelled) return;
+        setArticle(detail);
+        setAllArticles(list);
+      })
+      .catch(() => {
+        if (!cancelled) setNotFound(true);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
+
+  if (!id) {
+    return <Navigate to="/" replace />;
+  }
+
+  if (loading) {
+    return (
+      <div className="mx-auto max-w-3xl px-4 py-20 text-center text-sm text-ink-500">
+        기사를 불러오는 중…
+      </div>
+    );
+  }
+
+  if (notFound || !article) {
     return <Navigate to="/" replace />;
   }
 
   const meta = sectionMap[article.section];
-  const related = getRelatedArticles(article);
-  const { prev, next } = getAdjacentArticles(article);
+  const related = getRelatedArticles(allArticles, article);
+  const { prev, next } = getAdjacentArticles(allArticles, article);
 
+  console.log(article);
   return (
     <>
       <article className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
-        {/* 브레드크럼 */}
         <nav className="mb-5 flex items-center gap-1.5 text-xs text-ink-500">
           <Link to="/" className="hover:text-flash-600">
             홈
@@ -92,7 +131,7 @@ export default function ArticleDetailPage() {
           <span>›</span>
           <span>{meta?.label ?? "뉴스"}</span>
         </nav>
-        {/* 헤드라인 영역 */}
+
         <header>
           <SectionTag section={article.section} />
           <h1 className="mt-3 text-2xl font-bold leading-snug text-ink-900 sm:text-3xl">
@@ -126,7 +165,7 @@ export default function ArticleDetailPage() {
             )}
           </div>
         </header>
-        {/* 커버 — 영상 임베드 또는 대표 이미지 (본문과 별도) */}
+
         {article.videoUrl && youtubeEmbedUrl(article.videoUrl) && (
           <figure className="mt-6">
             <div className="aspect-video overflow-hidden rounded-lg bg-ink-100">
@@ -138,26 +177,18 @@ export default function ArticleDetailPage() {
                 allowFullScreen
               />
             </div>
-            <div className="relative overflow-hidden rounded-lg bg-ink-100">
-              {article.isVideo && (
-                <span className="absolute inset-0 flex items-center justify-center">
-                  <span className="flex h-16 w-16 items-center justify-center rounded-full bg-ink-950/55 text-2xl text-white backdrop-blur-sm">
-                    ▶
-                  </span>
-                </span>
-              )}
-            </div>
           </figure>
         )}
-        {/* 본문 — 문단·본문 이미지 블록 */}
+
         <div className="mt-7 flex flex-col gap-4">
-          <p className="text-lg font-bold">{article.subtitle}</p>
+          {article.subtitle && (
+            <p className="text-lg font-bold">{article.subtitle}</p>
+          )}
           {article.body && article.body.length > 0 ? (
             <>
               {article.body
                 .slice(0, Math.ceil(article.body.length / 2))
                 .map((block, i) => renderBodyBlock(block, i))}
-              {/* <AdSlot slotKey="article_inline" className="my-2 w-full" /> */}
               {article.body
                 .slice(Math.ceil(article.body.length / 2))
                 .map((block, i) =>
@@ -176,7 +207,7 @@ export default function ArticleDetailPage() {
             renderBodyBlock(article.excerpt ?? "본문 내용이 준비 중입니다.", 0)
           )}
         </div>
-        {/* 공유 / 기자 정보 */}
+
         <div className="mt-8 flex flex-wrap items-center justify-between gap-3 rounded-lg bg-paper-100 px-4 py-3.5">
           <p className="text-sm text-ink-700">
             {article.reporter ? `${article.reporter} ` : ""}
@@ -194,7 +225,7 @@ export default function ArticleDetailPage() {
             ))}
           </div>
         </div>
-        {/* 이전/다음 기사 내비게이션 */}
+
         <nav className="mt-8 divide-y divide-ink-900/10 border-y border-ink-900/10">
           {next && (
             <Link
@@ -227,7 +258,6 @@ export default function ArticleDetailPage() {
         </nav>
       </article>
 
-      {/* 관련기사 — 풀와이드 캐러셀 */}
       {related.length > 0 && (
         <NewsCarousel
           title={`${meta?.label ?? ""} 관련기사`}
