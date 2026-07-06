@@ -1,20 +1,21 @@
-import type { SectionId } from '../types/news'
-import { sectionMap } from '../data/sections'
+import type { SectionId } from "../types/news";
+import { sectionMap } from "../data/sections";
 
 const accentBg: Record<SectionId, string> = {
-  politics: 'bg-section-politics',
-  economy: 'bg-section-economy',
-  society: 'bg-section-society',
-  culture: 'bg-section-culture',
-  entertainment: 'bg-section-entertainment',
-  local: 'bg-section-local',
-  event: 'bg-section-event',
-  video: 'bg-section-video',
-}
+  politics: "bg-section-politics",
+  economy: "bg-section-economy",
+  society: "bg-section-society",
+  culture: "bg-section-culture",
+  entertainment: "bg-section-entertainment",
+  local: "bg-section-local",
+  event: "bg-section-event",
+  video: "bg-section-video",
+  cardNews: "bg-section-cardNews",
+};
 
 export default function SectionTag({ section }: { section: SectionId }) {
-  const meta = sectionMap[section]
-  if (!meta) return null
+  const meta = sectionMap[section];
+  if (!meta) return null;
 
   return (
     <span
@@ -22,5 +23,5 @@ export default function SectionTag({ section }: { section: SectionId }) {
     >
       {meta.label}
     </span>
-  )
+  );
 }
