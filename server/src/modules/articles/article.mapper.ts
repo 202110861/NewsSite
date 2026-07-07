@@ -1,125 +1,201 @@
-type ArticleStatus = 'PENDING_REVIEW' | 'PUBLISHED' | 'REJECTED' | 'ARCHIVED'
+import type { ArticleBlockType } from "@prisma/client";
 
-interface ArticleParagraphRow {
-  content: string
-  sortOrder: number
-}
+type ArticleStatus = "PENDING_REVIEW" | "PUBLISHED" | "REJECTED" | "ARCHIVED";
 
-interface ArticleBodySectionRow {
-  heading: string | null
-  sortOrder: number
-  paragraphs: ArticleParagraphRow[]
-}
-
-interface ArticleImageRow {
-  url: string
-  caption: string | null
-  sortOrder: number
+interface ArticleBodyBlockRow {
+  type: ArticleBlockType;
+  sortOrder: number;
+  text: string | null;
+  mediaUrl: string | null;
+  filePath: string | null;
+  caption: string | null;
 }
 
 interface ArticleRow {
-  id: string
-  title: string
-  sectionId: string
-  thumbnailUrl: string | null
-  isVideo: boolean
-  excerpt: string | null
-  reporter: string
-  viewCount: number
-  publishedAt: Date | null
-  createdAt: Date
-  bodySections: ArticleBodySectionRow[]
-  images: ArticleImageRow[]
+  id: string;
+  title: string;
+  sectionId: string;
+  isVideo: boolean;
+  excerpt: string | null;
+  reporter: string;
+  viewCount: number;
+  publishedAt: Date | null;
+  createdAt: Date;
+  bodyBlocks: ArticleBodyBlockRow[];
 }
 
+export type BodyBlockInput = {
+  type: "TEXT" | "IMAGE" | "VIDEO";
+  text?: string;
+  mediaUrl?: string;
+  filePath?: string;
+  caption?: string;
+};
+
+export type FrontendBodyBlock =
+  | string
+  | { type: "image"; src: string; caption?: string }
+  | { type: "video"; src: string; caption?: string };
+
 export interface FrontendArticle {
-  id: string
-  title: string
-  section: string
-  image?: string
-  isVideo?: boolean
-  publishedAt: string
-  excerpt?: string
-  body?: Array<string | { type: 'image'; src: string; caption?: string }>
-  reporter?: string
-  viewCount?: number
+  id: string;
+  title: string;
+  section: string;
+  image?: string;
+  isVideo?: boolean;
+  publishedAt: string;
+  excerpt?: string;
+  body?: FrontendBodyBlock[];
+  reporter?: string;
+  viewCount?: number;
+}
+
+export function resolveBlockSrc(
+  block: Pick<ArticleBodyBlockRow, "mediaUrl" | "filePath">,
+): string {
+  if (block.mediaUrl) return block.mediaUrl;
+  if (block.filePath) {
+    return block.filePath.startsWith("/")
+      ? block.filePath
+      : `/uploads/${block.filePath}`;
+  }
+  return "";
+}
+
+export function youtubeThumbnailUrl(url: string): string | null {
+  const match = url.match(
+    /(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([\w-]{11})/,
+  );
+  return match ? `https://img.youtube.com/vi/${match[1]}/hqdefault.jpg` : null;
+}
+
+export function resolveCoverSrc(
+  block: Pick<ArticleBodyBlockRow, "type" | "mediaUrl" | "filePath">,
+): string {
+  const src = resolveBlockSrc(block);
+  if (!src) return "";
+  if (block.type === "VIDEO") {
+    return youtubeThumbnailUrl(src) ?? src;
+  }
+  return src;
+}
+
+export function blockToFrontend(
+  block: ArticleBodyBlockRow,
+): FrontendBodyBlock | null {
+  if (block.type === "TEXT") {
+    const text = block.text?.trim();
+    return text ? text : null;
+  }
+  const src = resolveBlockSrc(block);
+  if (!src) return null;
+  if (block.type === "IMAGE") {
+    return { type: "image", src, caption: block.caption ?? undefined };
+  }
+  return { type: "video", src, caption: block.caption ?? undefined };
+}
+
+export function deriveCoverFromBlocks(
+  blocks: ArticleBodyBlockRow[],
+): { image?: string; isVideo: boolean } {
+  const sorted = [...blocks].sort((a, b) => a.sortOrder - b.sortOrder);
+  const firstMedia = sorted.find(
+    (block) => block.type === "IMAGE" || block.type === "VIDEO",
+  );
+
+  if (!firstMedia) {
+    return { isVideo: false };
+  }
+
+  const image = resolveCoverSrc(firstMedia);
+  return {
+    image: image || undefined,
+    isVideo: firstMedia.type === "VIDEO",
+  };
+}
+
+export function deriveArticleFlags(blocks: BodyBlockInput[]) {
+  const firstMedia = blocks.find(
+    (block) => block.type === "IMAGE" || block.type === "VIDEO",
+  );
+  return {
+    isVideo: firstMedia?.type === "VIDEO",
+  };
 }
 
 export function toFrontendArticle(article: ArticleRow): FrontendArticle {
-  const body: FrontendArticle['body'] = []
-
-  for (const section of article.bodySections.sort((a, b) => a.sortOrder - b.sortOrder)) {
-    for (const paragraph of section.paragraphs.sort((a, b) => a.sortOrder - b.sortOrder)) {
-      body.push(paragraph.content)
-    }
-  }
-
-  for (const image of article.images.sort((a, b) => a.sortOrder - b.sortOrder)) {
-    body.push({ type: 'image', src: image.url, caption: image.caption ?? undefined })
-  }
+  const sortedBlocks = [...article.bodyBlocks].sort(
+    (a, b) => a.sortOrder - b.sortOrder,
+  );
+  const body = sortedBlocks
+    .map(blockToFrontend)
+    .filter((block): block is FrontendBodyBlock => block !== null);
+  const cover = deriveCoverFromBlocks(sortedBlocks);
 
   return {
     id: article.id,
     title: article.title,
     section: article.sectionId,
-    image: article.thumbnailUrl ?? undefined,
-    isVideo: article.isVideo,
+    image: cover.image,
+    isVideo: cover.isVideo,
     publishedAt: (article.publishedAt ?? article.createdAt).toISOString(),
     excerpt: article.excerpt ?? undefined,
     body: body.length > 0 ? body : undefined,
     reporter: article.reporter,
     viewCount: article.viewCount,
-  }
+  };
 }
 
 export const articleInclude = {
-  bodySections: { include: { paragraphs: true } },
-  images: true,
-} as const
+  bodyBlocks: true,
+} as const;
 
 export interface CreateArticleInput {
-  title: string
-  sectionId: string
-  thumbnailUrl?: string
-  isVideo?: boolean
-  excerpt?: string
-  reporter?: string
-  sourceUrl?: string
-  body?: Array<{ heading?: string; paragraphs: string[] }>
-  images?: Array<{ url: string; caption?: string }>
+  title: string;
+  sectionId: string;
+  excerpt?: string;
+  reporter?: string;
+  sourceUrl?: string;
+  blocks?: BodyBlockInput[];
 }
 
-export function buildArticleCreateData(input: CreateArticleInput, status: ArticleStatus = 'PENDING_REVIEW') {
+export function buildArticleCreateData(
+  input: CreateArticleInput,
+  status: ArticleStatus = "PENDING_REVIEW",
+) {
+  const flags = deriveArticleFlags(input.blocks ?? []);
+
   return {
     title: input.title,
     sectionId: input.sectionId,
     status,
-    thumbnailUrl: input.thumbnailUrl,
-    isVideo: input.isVideo ?? false,
+    isVideo: flags.isVideo,
     excerpt: input.excerpt,
-    reporter: input.reporter ?? '발행인',
+    reporter: input.reporter ?? "발행인",
     sourceUrl: input.sourceUrl,
-    publishedAt: status === 'PUBLISHED' ? new Date() : undefined,
-    bodySections: {
-      create: (input.body ?? []).map((section, sectionIndex) => ({
-        heading: section.heading,
-        sortOrder: sectionIndex,
-        paragraphs: {
-          create: section.paragraphs.map((content, paragraphIndex) => ({
-            content,
-            sortOrder: paragraphIndex,
-          })),
-        },
-      })),
-    },
-    images: {
-      create: (input.images ?? []).map((image, index) => ({
-        url: image.url,
-        caption: image.caption,
+    publishedAt: status === "PUBLISHED" ? new Date() : undefined,
+    bodyBlocks: {
+      create: (input.blocks ?? []).map((block, index) => ({
+        type: block.type,
         sortOrder: index,
+        text: block.type === "TEXT" ? (block.text ?? "") : null,
+        mediaUrl: block.type !== "TEXT" ? (block.mediaUrl ?? null) : null,
+        filePath: block.type !== "TEXT" ? (block.filePath ?? null) : null,
+        caption: block.caption ?? null,
       })),
     },
-  }
+  };
 }
 
-export type { ArticleStatus }
+export function buildBlocksCreateData(blocks: BodyBlockInput[]) {
+  return blocks.map((block, index) => ({
+    type: block.type,
+    sortOrder: index,
+    text: block.type === "TEXT" ? (block.text ?? "") : null,
+    mediaUrl: block.type !== "TEXT" ? (block.mediaUrl ?? null) : null,
+    filePath: block.type !== "TEXT" ? (block.filePath ?? null) : null,
+    caption: block.caption ?? null,
+  }));
+}
+
+export type { ArticleStatus };
