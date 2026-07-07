@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import { fetchArticles } from "../lib/articles";
 import { sectionMap } from "../data/sections";
 import SectionTag from "../components/SectionTag";
-import { formatTimeAgo } from "../utils/format";
 import { resolveMediaUrl } from "../utils/media";
 import type { Article } from "../types/news";
 

@@ -2,7 +2,6 @@ import { useRef } from "react";
 import { Link } from "react-router-dom";
 import type { Article } from "../types/news";
 import SectionTag from "./SectionTag";
-import { formatTimeAgo } from "../utils/format";
 import { resolveMediaUrl } from "../utils/media";
 
 interface Props {
