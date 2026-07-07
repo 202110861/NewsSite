@@ -19,6 +19,12 @@ enum ArticleStatus {
   ARCHIVED
 }
 
+enum ArticleBlockType {
+  TEXT
+  IMAGE
+  VIDEO
+}
+
 enum SubscriptionStatus {
   ACTIVE
   CANCELLED
@@ -32,12 +38,12 @@ enum PaymentStatus {
 }
 
 model User {
-  id           String         @id @default(uuid())
-  username     String         @unique
-  passwordHash String
-  role         UserRole       @default(USER)
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
+  id            String         @id @default(uuid())
+  username      String         @unique
+  passwordHash  String
+  role          UserRole       @default(USER)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
   refreshTokens RefreshToken[]
   subscriptions Subscription[]
 }
@@ -58,49 +64,45 @@ model Section {
 }
 
 model Article {
-  id             String               @id @default(uuid())
+  id             String             @id @default(uuid())
   title          String
   sectionId      String
-  status         ArticleStatus        @default(PENDING_REVIEW)
-  thumbnailUrl   String?
-  isVideo        Boolean              @default(false)
+  status         ArticleStatus      @default(PENDING_REVIEW)
+  isVideo        Boolean            @default(false)
   excerpt        String?
-  reporter       String               @default("발행인")
-  viewCount      Int                  @default(0)
+  reporter       String             @default("발행인")
+  viewCount      Int                @default(0)
   publishedAt    DateTime?
   rejectedReason String?
   sourceUrl      String?
-  createdAt      DateTime             @default(now())
-  updatedAt      DateTime             @updatedAt
-  section        Section              @relation(fields: [sectionId], references: [id])
-  bodySections   ArticleBodySection[]
-  images         ArticleImage[]
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  section        Section            @relation(fields: [sectionId], references: [id])
+  bodyBlocks     ArticleBodyBlock[]
 }
 
-model ArticleBodySection {
-  id         String             @id @default(uuid())
-  articleId  String
-  heading    String?
-  sortOrder  Int                @map("order")
-  article    Article            @relation(fields: [articleId], references: [id], onDelete: Cascade)
-  paragraphs ArticleParagraph[]
-}
-
-model ArticleParagraph {
-  id                   String             @id @default(uuid())
-  articleBodySectionId String
-  content              String
-  sortOrder            Int                @map("order")
-  section              ArticleBodySection @relation(fields: [articleBodySectionId], references: [id], onDelete: Cascade)
-}
-
-model ArticleImage {
-  id        String  @id @default(uuid())
+model ArticleBodyBlock {
+  id        String           @id @default(uuid())
   articleId String
-  url       String
+  type      ArticleBlockType
+  sortOrder Int              @map("order")
+  text      String?
+  mediaUrl  String?
+  filePath  String?
   caption   String?
-  sortOrder Int     @map("order")
-  article   Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  article   Article          @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@index([articleId, sortOrder])
+}
+
+model MediaAsset {
+  id           String   @id @default(uuid())
+  filename     String
+  originalName String
+  mimeType     String
+  size         Int
+  url          String
+  createdAt    DateTime @default(now())
 }
 
 model SubscriptionPlan {
