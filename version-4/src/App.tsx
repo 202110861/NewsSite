@@ -9,6 +9,9 @@ import SignupPage from "./pages/SignupPage";
 import LoginPage from "./pages/LoginPage";
 import SupportPage from "./pages/SupportPage";
 import SupportCompletePage from "./pages/SupportCompletePage";
+import AdminRoute from "./components/AdminRoute";
+import AdminReviewListPage from "./pages/admin/AdminReviewListPage";
+import AdminArticleFormPage from "./pages/admin/AdminArticleFormPage";
 
 function App() {
   return (
@@ -34,6 +37,22 @@ function App() {
             <ProtectedRoute>
               <SupportCompletePage />
             </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/reviews"
+          element={
+            <AdminRoute>
+              <AdminReviewListPage />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/articles/:id"
+          element={
+            <AdminRoute>
+              <AdminArticleFormPage />
+            </AdminRoute>
           }
         />
       </Routes>
