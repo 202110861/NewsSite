@@ -19,14 +19,15 @@ export interface Section {
 
 export type ArticleBodyBlock =
   | string
-  | { type: "image"; src: string; caption?: string };
+  | { type: "image"; src: string; caption?: string }
+  | { type: "video"; src: string; caption?: string };
 
 export interface Article {
   id: string;
   title: string;
   subtitle?: string;
   section: SectionId;
-  /** 목록·상세 상단 커버 이미지 (본문 body와 별도) */
+  /** 목록 썸네일 — 본문 body의 첫 번째 이미지·영상에서 파생 */
   image?: string;
   isVideo?: boolean;
   videoUrl?: string;
@@ -42,4 +43,24 @@ export interface Article {
 export interface HotIssueItem {
   id: string;
   title: string;
+}
+
+export type BodyBlockInput = {
+  type: "TEXT" | "IMAGE" | "VIDEO";
+  text?: string;
+  mediaUrl?: string;
+  filePath?: string;
+  caption?: string;
+};
+
+export interface AdminArticle {
+  id: string;
+  title: string;
+  sectionId: string;
+  status: "PENDING_REVIEW" | "PUBLISHED" | "REJECTED" | "ARCHIVED";
+  excerpt?: string | null;
+  reporter: string;
+  createdAt: string;
+  updatedAt: string;
+  blocks: BodyBlockInput[];
 }
