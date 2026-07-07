@@ -43,7 +43,17 @@ GET /api/users/me
 Authorization: Bearer {accessToken}
 ```
 
-## Automation (X-API-Key 헤더 필요)
+## Automation (뉴스레터 자동화 전용 API Key)
+
+`AUTOMATION_API_KEY` 환경 변수에 설정한 고정 키를 사용합니다.
+
+헤더 (둘 중 하나):
+- `X-API-Key: {AUTOMATION_API_KEY}` (권장)
+- `Authorization: Bearer {AUTOMATION_API_KEY}`
+
+검수 대기(`PENDING_REVIEW`) 상태로 기사를 등록합니다.
+
+### 일반 기사 등록
 
 ```
 POST /api/automation/articles
@@ -54,7 +64,62 @@ Content-Type: application/json
   "title": "자동 수집 기사",
   "sectionId": "politics",
   "excerpt": "요약",
-  "body": [{ "paragraphs": ["본문 1", "본문 2"] }]
+  "reporter": "발행인",
+  "sourceUrl": "https://example.com/original",
+  "blocks": [
+    { "type": "TEXT", "text": "본문 첫 문단" },
+    { "type": "IMAGE", "mediaUrl": "https://example.com/photo.jpg", "caption": "캡션" },
+    { "type": "TEXT", "text": "본문 두 번째 문단" }
+  ]
+}
+```
+
+### 카드뉴스 등록
+
+`sectionId`를 `cardNews`로 설정하고 이미지 블록을 순서대로 전달합니다.
+
+```
+POST /api/automation/articles
+X-API-Key: {AUTOMATION_API_KEY}
+Content-Type: application/json
+
+{
+  "title": "[지역] 분양분쟁 카드뉴스",
+  "sectionId": "cardNews",
+  "blocks": [
+    { "type": "IMAGE", "mediaUrl": "https://example.com/card-1.png" },
+    { "type": "IMAGE", "mediaUrl": "https://example.com/card-2.png" },
+    { "type": "IMAGE", "filePath": "images/uploaded-card.png" }
+  ]
+}
+```
+
+### 일괄 등록
+
+```
+POST /api/automation/articles/batch
+X-API-Key: {AUTOMATION_API_KEY}
+Content-Type: application/json
+
+{
+  "articles": [
+    { "title": "기사 1", "sectionId": "economy", "blocks": [{ "type": "TEXT", "text": "..." }] },
+    { "title": "카드뉴스 1", "sectionId": "cardNews", "blocks": [{ "type": "IMAGE", "mediaUrl": "..." }] }
+  ]
+}
+```
+
+동일 API Key로 관리자 API도 호출할 수 있습니다 (`authMiddleware` 예외 처리).
+
+```
+POST /api/admin/articles
+X-API-Key: {AUTOMATION_API_KEY}
+Content-Type: application/json
+
+{
+  "title": "검수 목록에 추가할 기사",
+  "sectionId": "society",
+  "blocks": [{ "type": "TEXT", "text": "본문" }]
 }
 ```
 
