@@ -74,7 +74,9 @@ export default function SectionPage() {
           <p className="text-base font-semibold text-ink-700">
             아직 등록된 {meta.label} 기사가 없습니다.
           </p>
-          <p className="text-sm text-ink-500">곧 새로운 소식으로 채워드릴게요.</p>
+          <p className="text-sm text-ink-500">
+            곧 새로운 소식으로 채워드릴게요.
+          </p>
         </div>
       ) : (
         <div className="grid gap-x-5 gap-y-7 sm:grid-cols-2 lg:grid-cols-3">
@@ -101,11 +103,17 @@ export default function SectionPage() {
                   {a.title}
                 </h2>
                 {a.excerpt && (
-                  <p className="line-clamp-2 text-xs text-ink-500">{a.excerpt}</p>
+                  <p className="line-clamp-2 text-xs text-ink-500">
+                    {a.excerpt}
+                  </p>
                 )}
-                <p className="text-xs text-ink-500">
-                  {formatTimeAgo(a.publishedAt)}
-                </p>
+                <time dateTime={a.publishedAt} className="text-xs text-ink-500">
+                  {new Date(a.publishedAt).toLocaleString("ko-KR", {
+                    year: "numeric",
+                    month: "2-digit",
+                    day: "2-digit",
+                  })}
+                </time>
               </div>
             </Link>
           ))}

@@ -1,13 +1,13 @@
-import { Link } from 'react-router-dom'
-import type { Article } from '../types/news'
-import SectionTag from './SectionTag'
-import { formatTimeAgo } from '../utils/format'
-import { resolveMediaUrl } from '../utils/media'
+import { Link } from "react-router-dom";
+import type { Article } from "../types/news";
+import SectionTag from "./SectionTag";
+import { formatTimeAgo } from "../utils/format";
+import { resolveMediaUrl } from "../utils/media";
 
 export default function HeroHeadlines({ articles }: { articles: Article[] }) {
-  const [main, ...rest] = articles
+  const [main, ...rest] = articles;
 
-  if (!main) return null
+  if (!main) return null;
 
   return (
     <section className="mx-auto max-w-6xl px-4 pt-6 sm:px-6">
@@ -18,7 +18,7 @@ export default function HeroHeadlines({ articles }: { articles: Article[] }) {
           className="group relative block overflow-hidden rounded-lg bg-ink-950"
         >
           <img
-            src={resolveMediaUrl(main.image ?? '')}
+            src={resolveMediaUrl(main.image ?? "")}
             alt=""
             className="aspect-[16/10] w-full object-cover opacity-90 transition duration-500 group-hover:scale-105 group-hover:opacity-100"
             loading="eager"
@@ -29,9 +29,6 @@ export default function HeroHeadlines({ articles }: { articles: Article[] }) {
             <h1 className="mt-3 text-xl font-bold leading-snug text-white sm:text-2xl lg:text-3xl">
               {main.title}
             </h1>
-            <p className="mt-2 text-xs text-paper-200/80">
-              {formatTimeAgo(main.publishedAt)}
-            </p>
           </div>
         </Link>
 
@@ -45,7 +42,7 @@ export default function HeroHeadlines({ articles }: { articles: Article[] }) {
             >
               <div className="h-24 w-32 shrink-0 overflow-hidden rounded-md bg-ink-100 sm:h-28 sm:w-36">
                 <img
-                  src={resolveMediaUrl(a.image ?? '')}
+                  src={resolveMediaUrl(a.image ?? "")}
                   alt=""
                   className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                   loading="lazy"
@@ -56,12 +53,11 @@ export default function HeroHeadlines({ articles }: { articles: Article[] }) {
                 <h2 className="line-clamp-2 text-sm font-bold leading-snug text-ink-900 sm:text-base">
                   {a.title}
                 </h2>
-                <p className="text-xs text-ink-500">{formatTimeAgo(a.publishedAt)}</p>
               </div>
             </Link>
           ))}
         </div>
       </div>
     </section>
-  )
+  );
 }
