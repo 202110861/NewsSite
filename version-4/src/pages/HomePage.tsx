@@ -3,7 +3,6 @@ import HotIssueTicker from "../components/HotIssueTicker";
 import HeroHeadlines from "../components/HeroHeadlines";
 import NewsCarousel from "../components/NewsCarousel";
 import SectionNewsGrid from "../components/SectionNewsGrid";
-import AdSlot from "../components/AdSlot";
 import { fetchArticles, pickArticlesByIds } from "../lib/articles";
 import type { Article } from "../types/news";
 

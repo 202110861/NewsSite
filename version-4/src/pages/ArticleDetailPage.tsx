@@ -5,8 +5,9 @@ import { sectionMap } from "../data/sections";
 import SectionTag from "../components/SectionTag";
 import NewsCarousel from "../components/NewsCarousel";
 import { formatTimeAgo } from "../utils/format";
-import { resolveMediaUrl } from "../utils/media";
+import { resolveAbsoluteMediaUrl, resolveMediaUrl } from "../utils/media";
 import type { Article, ArticleBodyBlock } from "../types/news";
+import { Helmet } from "react-helmet-async";
 
 function youtubeEmbedUrl(url: string): string | null {
   const match = url.match(
@@ -119,10 +120,26 @@ export default function ArticleDetailPage() {
   const meta = sectionMap[article.section];
   const related = getRelatedArticles(allArticles, article);
   const { prev, next } = getAdjacentArticles(allArticles, article);
-
-  console.log(article);
+  const pageUrl =
+    import.meta.env.VITE_SITE_URL?.replace(/\/$/, "") ||
+    (typeof window !== "undefined"
+      ? window.location.origin
+      : "https://newsin.kr");
+      
   return (
     <>
+      <Helmet>
+        <title>{article.title} - 경제인뉴스</title>
+        <meta property="og:title" content={article.title} />
+        <meta property="og:description" content={article.excerpt} />
+        <meta
+          property="og:image"
+          content={
+            article.image ? resolveAbsoluteMediaUrl(article.image) : undefined
+          }
+        />
+        <meta property="og:url" content={`${pageUrl}/article/${article.id}`} />
+      </Helmet>
       <article className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
         <nav className="mb-5 flex items-center gap-1.5 text-xs text-ink-500">
           <Link to="/" className="hover:text-flash-600">
