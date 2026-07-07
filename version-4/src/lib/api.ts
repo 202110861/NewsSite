@@ -75,6 +75,27 @@ async function request<T>(
   return res.json() as Promise<T>;
 }
 
+async function uploadRequest<T>(path: string, formData: FormData): Promise<T> {
+  const headers = new Headers();
+  if (accessToken) {
+    headers.set("Authorization", `Bearer ${accessToken}`);
+  }
+
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: "POST",
+    headers,
+    body: formData,
+    credentials: "include",
+  });
+
+  if (!res.ok) {
+    const body = (await res.json().catch(() => ({}))) as { message?: string };
+    throw new ApiError(res.status, body.message ?? "업로드에 실패했습니다.");
+  }
+
+  return res.json() as Promise<T>;
+}
+
 export const api = {
   get: <T>(path: string) => request<T>(path),
   post: <T>(path: string, body?: unknown) =>
@@ -88,6 +109,7 @@ export const api = {
       body: body ? JSON.stringify(body) : undefined,
     }),
   delete: <T>(path: string) => request<T>(path, { method: "DELETE" }),
+  upload: <T>(path: string, formData: FormData) => uploadRequest<T>(path, formData),
 };
 
 export interface AuthUser {
