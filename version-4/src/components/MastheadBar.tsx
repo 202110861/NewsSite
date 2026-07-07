@@ -1,8 +1,8 @@
-import { Link } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
+import { Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 export default function MastheadBar() {
-  const { user, logout } = useAuth()
+  const { user, logout } = useAuth();
 
   return (
     <div className="border-b border-ink-900/10 bg-paper-100 text-[11px] text-ink-500">
@@ -10,13 +10,27 @@ export default function MastheadBar() {
         <nav className="flex items-center gap-3">
           {user ? (
             <>
-              <span className="font-semibold text-ink-700">{user.username}님</span>
+              <span className="font-semibold text-ink-700">
+                {user.username}님
+              </span>
               <span className="text-ink-300">|</span>
+              {user.role === "ADMIN" && (
+                <>
+                  <Link to="/admin/reviews" className="hover:text-ink-900">
+                    기사 검수
+                  </Link>
+                  <span className="text-ink-300">|</span>
+                </>
+              )}
               <Link to="/support" className="hover:text-ink-900">
                 후원
               </Link>
               <span className="text-ink-300">|</span>
-              <button type="button" onClick={() => logout()} className="hover:text-ink-900">
+              <button
+                type="button"
+                onClick={() => logout()}
+                className="hover:text-ink-900"
+              >
                 로그아웃
               </button>
             </>
@@ -31,12 +45,8 @@ export default function MastheadBar() {
               </Link>
             </>
           )}
-          <span className="text-ink-300">|</span>
-          <Link to="/" className="hover:text-ink-900">
-            전체기사
-          </Link>
         </nav>
       </div>
     </div>
-  )
+  );
 }
