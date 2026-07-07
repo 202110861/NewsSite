@@ -51,7 +51,7 @@ export default function NewsCarousel({ title, articles, moreHref }: Props) {
             >
               <div className="relative overflow-hidden rounded-md bg-ink-100">
                 <img
-                  src={resolveMediaUrl(a.image ?? '')}
+                  src={resolveMediaUrl(a.image ?? "")}
                   alt=""
                   className="aspect-[4/3] w-full object-cover transition duration-500 group-hover:scale-105"
                   loading="lazy"
@@ -69,9 +69,6 @@ export default function NewsCarousel({ title, articles, moreHref }: Props) {
                 <h3 className="line-clamp-2 text-sm font-bold leading-snug text-ink-900 group-hover:text-flash-700">
                   {a.title}
                 </h3>
-                <p className="text-xs text-ink-500">
-                  {formatTimeAgo(a.publishedAt)}
-                </p>
               </div>
             </Link>
           ))}

@@ -125,7 +125,7 @@ export default function ArticleDetailPage() {
     (typeof window !== "undefined"
       ? window.location.origin
       : "https://newsin.kr");
-      
+
   return (
     <>
       <Helmet>
@@ -171,9 +171,6 @@ export default function ArticleDetailPage() {
                 minute: "2-digit",
               })}
             </time>
-            <span className="text-ink-300">
-              ({formatTimeAgo(article.publishedAt)})
-            </span>
             {typeof article.viewCount === "number" && (
               <>
                 <span>·</span>
