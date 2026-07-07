@@ -1,31 +1,41 @@
-import { useState, type FormEvent } from 'react'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { ApiError } from '../lib/api'
-import { useAuth } from '../context/AuthContext'
+import { useState, type FormEvent } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { ApiError } from "../lib/api";
+import { useAuth } from "../context/AuthContext";
 
 export default function LoginPage() {
-  const { login } = useAuth()
-  const navigate = useNavigate()
-  const location = useLocation()
-  const from = (location.state as { from?: string; message?: string } | null)?.from ?? '/'
-  const initialMessage = (location.state as { message?: string } | null)?.message
+  const { login } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const from =
+    (location.state as { from?: string; message?: string } | null)?.from ?? "/";
+  const initialMessage = (location.state as { message?: string } | null)
+    ?.message;
 
-  const [username, setUsername] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
-  const [submitting, setSubmitting] = useState(false)
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   async function handleSubmit(e: FormEvent) {
-    e.preventDefault()
-    setError('')
-    setSubmitting(true)
+    e.preventDefault();
+    setError("");
+    setSubmitting(true);
     try {
-      await login(username, password)
-      navigate(from, { replace: true })
+      const loggedIn = await login(username, password);
+      const target =
+        from !== "/"
+          ? from
+          : loggedIn.role === "ADMIN"
+            ? "/admin/reviews"
+            : "/";
+      navigate(target, { replace: true });
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : '로그인에 실패했습니다.')
+      setError(
+        err instanceof ApiError ? err.message : "로그인에 실패했습니다.",
+      );
     } finally {
-      setSubmitting(false)
+      setSubmitting(false);
     }
   }
 
@@ -36,7 +46,10 @@ export default function LoginPage() {
 
       <form onSubmit={handleSubmit} className="mt-8 space-y-5">
         <div>
-          <label htmlFor="username" className="block text-sm font-semibold text-ink-700">
+          <label
+            htmlFor="username"
+            className="block text-sm font-semibold text-ink-700"
+          >
             아이디
           </label>
           <input
@@ -48,7 +61,10 @@ export default function LoginPage() {
         </div>
 
         <div>
-          <label htmlFor="password" className="block text-sm font-semibold text-ink-700">
+          <label
+            htmlFor="password"
+            className="block text-sm font-semibold text-ink-700"
+          >
             비밀번호
           </label>
           <input
@@ -67,7 +83,7 @@ export default function LoginPage() {
           disabled={submitting}
           className="w-full rounded-lg bg-flash-600 py-3 text-sm font-bold text-white hover:bg-flash-700 disabled:opacity-60"
         >
-          {submitting ? '로그인 중...' : '로그인'}
+          {submitting ? "로그인 중..." : "로그인"}
         </button>
       </form>
 
@@ -76,11 +92,14 @@ export default function LoginPage() {
       )}
 
       <p className="mt-6 text-center text-sm text-ink-500">
-        계정이 없으신가요?{' '}
-        <Link to="/signup" className="font-semibold text-flash-600 hover:underline">
+        계정이 없으신가요?{" "}
+        <Link
+          to="/signup"
+          className="font-semibold text-flash-600 hover:underline"
+        >
           회원가입
         </Link>
       </p>
     </div>
-  )
+  );
 }
