@@ -35,10 +35,6 @@ jobs:
       - name: Install and build
         working-directory: version-4
         env:
-          # Render render.yaml의 VITE_SITE_URL과 동일
-          #VITE_SITE_URL: https://newsin.kr
-          VITE_SITE_URL: https://d37iu5dwrp1zea.cloudfront.net/api
-          # API가 별도 도메인이면 GitHub Secrets에 등록
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
         run: |
           npm ci
