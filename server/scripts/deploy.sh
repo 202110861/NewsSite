@@ -3,6 +3,9 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
+echo "Cleaning stale build artifacts..."
+rm -rf node_modules dist node_modules_bak 2>/dev/null || sudo rm -rf node_modules dist node_modules_bak
+
 echo "Installing dependencies..."
 npm ci
 
