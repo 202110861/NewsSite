@@ -53,6 +53,8 @@ Authorization: Bearer {accessToken}
 
 검수 대기(`PENDING_REVIEW`) 상태로 기사를 등록합니다.
 
+`blocks`의 `IMAGE`/`VIDEO` 블록에 외부 `mediaUrl`(http/https)을 넣으면 서버가 파일을 다운로드해 `uploads/`에 저장하고 `filePath`로 변환합니다. YouTube URL은 그대로 `mediaUrl`로 저장됩니다.
+
 ### 일반 기사 등록
 
 ```
