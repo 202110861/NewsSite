@@ -22,6 +22,7 @@ export type ArticleBodyBlock =
   | { type: "image"; src: string; caption?: string }
   | { type: "video"; src: string; caption?: string };
 
+/* 기사 타입 */
 export interface Article {
   id: string;
   title: string;

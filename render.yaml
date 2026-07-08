@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: newssite
+    runtime: static
+    buildCommand: npm install && npm run build
+    staticPublishPath: version-4/dist
+    pullRequestPreviewsEnabled: true
+    envVars:
+      - key: VITE_SITE_URL
+        value: https://newsin.kr
+    routes:
+      # OG prerender HTML (catch-all보다 위에)
+      - type: rewrite
+        source: /article/:id
+        destination: /article/:id/index.html
+      - type: rewrite
+        source: /section/:id
+        destination: /section/:id/index.html
+      - type: rewrite
+        source: /*
+        destination: /index.html
