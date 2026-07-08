@@ -11,8 +11,7 @@
     "db:migrate": "prisma migrate dev",
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
-    "db:import-mockdata": "tsx prisma/import-mockdata.ts",
-    "db:import-articles": "tsx prisma/import-articles.ts"
+    "db:import-mockdata": "tsx prisma/import-mockdata.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.19.0",

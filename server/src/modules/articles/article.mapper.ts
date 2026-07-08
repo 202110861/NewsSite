@@ -1,5 +1,4 @@
-import type { ArticleBlockType } from "@prisma/client";
-
+type ArticleBlockType = "TEXT" | "IMAGE" | "VIDEO";
 type ArticleStatus = "PENDING_REVIEW" | "PUBLISHED" | "REJECTED" | "ARCHIVED";
 
 interface ArticleBodyBlockRow {

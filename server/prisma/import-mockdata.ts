@@ -3,7 +3,11 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { PrismaClient } from "@prisma/client";
 import { hashPassword } from "../src/utils/password.js";
-import type { BodyBlockInput } from "../src/modules/articles/article.mapper.js";
+import {
+  deriveArticleFlags,
+  type BodyBlockInput,
+} from "../src/modules/articles/article.mapper.js";
+import { articlesById } from "./mockdata.js";
 
 const prisma = new PrismaClient();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -188,7 +192,6 @@ async function seedBase() {
 }
 
 async function main() {
-  const { articlesById } = await import("./mockdata.ts");
   const articles = Object.values(articlesById) as MockArticle[];
 
   console.log(`mockdata 기사 ${articles.length}건 변환 시작...`);
