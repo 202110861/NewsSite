@@ -11,13 +11,3 @@ export function formatTimeAgo(iso: string): string {
   const diffDay = Math.floor(diffHour / 24)
   return `${diffDay}일 전`
 }
-
-export function formatMastheadDate(): string {
-  const now = new Date('2026-06-25T10:00:00+09:00')
-  const days = ['일', '월', '화', '수', '목', '금', '토']
-  const y = now.getFullYear()
-  const m = now.getMonth() + 1
-  const d = now.getDate()
-  const day = days[now.getDay()]
-  return `${y}.${String(m).padStart(2, '0')}.${String(d).padStart(2, '0')} (${day})`
-}

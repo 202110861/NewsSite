@@ -1,12 +1,12 @@
 {
-  "name": "newssite",
+  "name": "news-site",
   "private": true,
   "scripts": {
-    "dev": "npm run dev --prefix version-4",
-    "build": "npm run build --prefix version-4",
-    "preview": "npm run preview --prefix version-4",
-    "lint": "npm run lint --prefix version-4",
-    "install:app": "npm install --prefix version-4",
-    "postinstall": "npm install --prefix version-4"
+    "dev:all": "concurrently \"npm run dev --prefix server\" \"npm run dev --prefix version-4\"",
+    "dev:server": "npm run dev --prefix server",
+    "dev:front": "npm run dev --prefix version-4"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
   }
 }

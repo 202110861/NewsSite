@@ -22,11 +22,17 @@ function filenameFromSrc(src: string): string {
   );
 }
 
-/** src/images·public·외부 URL 이미지 경로를 브라우저에서 쓸 수 있는 src로 변환 */
+/** src/images·public·외부 URL·업로드 파일 경로를 브라우저에서 쓸 수 있는 src로 변환 */
 export function resolveMediaUrl(src: string): string {
   if (!src) return src;
   if (src.startsWith("data:") || /^https?:\/\//.test(src)) {
     return src;
+  }
+
+  if (src.startsWith("/uploads/")) {
+    const apiBase = import.meta.env.VITE_API_URL ?? "/api";
+    const origin = apiBase.replace(/\/api\/?$/, "");
+    return `${origin}${src}`;
   }
 
   const filename = filenameFromSrc(src);
@@ -46,7 +52,9 @@ export function resolveAbsoluteMediaUrl(src: string): string {
 
   const base = (
     import.meta.env.VITE_SITE_URL ||
-    (typeof window !== "undefined" ? window.location.origin : "https://newsin.kr")
+    (typeof window !== "undefined"
+      ? window.location.origin
+      : "https://newsin.kr")
   ).replace(/\/$/, "");
 
   return `${base}${resolved.startsWith("/") ? resolved : `/${resolved}`}`;

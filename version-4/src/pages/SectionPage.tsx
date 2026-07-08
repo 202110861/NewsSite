@@ -1,32 +1,58 @@
 import { Link, Navigate, useParams } from "react-router-dom";
-import { useEffect } from "react";
-import { allArticlesSorted } from "../data/articles";
+import { useEffect, useState } from "react";
+import { fetchArticles } from "../lib/articles";
 import { sectionMap } from "../data/sections";
 import SectionTag from "../components/SectionTag";
-import { formatTimeAgo } from "../utils/format";
 import { resolveMediaUrl } from "../utils/media";
-import type { SectionId } from "../types/news";
+import type { Article } from "../types/news";
 
 export default function SectionPage() {
   const { sectionId } = useParams<{ sectionId: string }>();
+  const [articles, setArticles] = useState<Article[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const meta = sectionId ? sectionMap[sectionId] : undefined;
 
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [sectionId]);
 
-  const meta = sectionId ? sectionMap[sectionId] : undefined;
+  useEffect(() => {
+    if (!sectionId || !meta) return;
+
+    let cancelled = false;
+    setLoading(true);
+
+    fetchArticles({ sectionId, limit: 100 })
+      .then((data) => {
+        if (!cancelled) setArticles(data);
+      })
+      .catch(() => {
+        if (!cancelled) setArticles([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [sectionId, meta]);
 
   if (!sectionId || !meta) {
     return <Navigate to="/" replace />;
   }
 
-  const articles = allArticlesSorted.filter(
-    (a) => a.section === (sectionId as SectionId),
-  );
+  if (loading) {
+    return (
+      <div className="mx-auto max-w-6xl px-4 py-20 text-center text-sm text-ink-500">
+        기사를 불러오는 중…
+      </div>
+    );
+  }
 
   return (
     <section className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
-      {/* 브레드크럼 */}
       <nav className="mb-4 flex items-center gap-1.5 text-xs text-ink-500">
         <Link to="/" className="hover:text-flash-600">
           홈
@@ -35,7 +61,6 @@ export default function SectionPage() {
         <span>{meta.label}</span>
       </nav>
 
-      {/* 섹션 헤더 */}
       <div className="mb-6 flex items-baseline justify-between border-b-2 border-ink-900 pb-3">
         <h1 className="font-display text-2xl font-black tracking-tight text-ink-900 sm:text-3xl">
           {meta.label}
@@ -56,15 +81,13 @@ export default function SectionPage() {
         <div className="grid gap-x-5 gap-y-7 sm:grid-cols-2 lg:grid-cols-3">
           {articles.map((a) => (
             <Link key={a.id} to={`/article/${a.id}`} className="group">
-              <div className="relative aspect-[4/3] overflow-hidden rounded-md bg-ink-100">
-                {a.image && (
-                  <img
-                    src={resolveMediaUrl(a.image)}
-                    alt=""
-                    className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                    loading="lazy"
-                  />
-                )}
+              <div className="relative overflow-hidden rounded-md bg-ink-100">
+                <img
+                  src={resolveMediaUrl(a.image ?? "")}
+                  alt=""
+                  className="aspect-[4/3] w-full object-cover transition duration-500 group-hover:scale-105"
+                  loading="lazy"
+                />
                 {a.isVideo && (
                   <span className="absolute inset-0 flex items-center justify-center">
                     <span className="flex h-10 w-10 items-center justify-center rounded-full bg-ink-950/60 text-white backdrop-blur-sm">
@@ -83,9 +106,13 @@ export default function SectionPage() {
                     {a.excerpt}
                   </p>
                 )}
-                <p className="text-xs text-ink-500">
-                  {formatTimeAgo(a.publishedAt)}
-                </p>
+                <time dateTime={a.publishedAt} className="text-xs text-ink-500">
+                  {new Date(a.publishedAt).toLocaleString("ko-KR", {
+                    year: "numeric",
+                    month: "2-digit",
+                    day: "2-digit",
+                  })}
+                </time>
               </div>
             </Link>
           ))}

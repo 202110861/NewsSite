@@ -1,25 +1,51 @@
 import { Link, useSearchParams } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { searchArticles } from "../data/articles";
+import { searchArticles } from "../lib/articles";
 import SectionTag from "../components/SectionTag";
 import { formatTimeAgo } from "../utils/format";
 import { resolveMediaUrl } from "../utils/media";
+import type { Article } from "../types/news";
 
 export default function SearchPage() {
   const [searchParams] = useSearchParams();
   const query = searchParams.get("q")?.trim() ?? "";
   const [inputValue, setInputValue] = useState(query);
+  const [results, setResults] = useState<Article[]>([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     window.scrollTo(0, 0);
     setInputValue(query);
   }, [query]);
 
-  const results = query ? searchArticles(query) : [];
+  useEffect(() => {
+    if (!query) {
+      setResults([]);
+      setLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setLoading(true);
+
+    searchArticles(query)
+      .then((data) => {
+        if (!cancelled) setResults(data);
+      })
+      .catch(() => {
+        if (!cancelled) setResults([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [query]);
 
   return (
     <section className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
-      {/* 브레드크럼 */}
       <nav className="mb-4 flex items-center gap-1.5 text-xs text-ink-500">
         <Link to="/" className="hover:text-flash-600">
           홈
@@ -28,7 +54,6 @@ export default function SearchPage() {
         <span>검색</span>
       </nav>
 
-      {/* 검색 헤더 */}
       <div className="mb-6 border-b-2 border-ink-900 pb-4">
         <h1 className="font-display text-xl font-black tracking-tight text-ink-900 sm:text-2xl">
           {query ? (
@@ -39,11 +64,10 @@ export default function SearchPage() {
             "뉴스 검색"
           )}
         </h1>
-        {query && (
+        {query && !loading && (
           <p className="mt-1.5 text-sm text-ink-500">총 {results.length}건</p>
         )}
 
-        {/* 검색창 — 결과 페이지에서도 바로 재검색 가능 */}
         <form
           className="mt-4 flex max-w-md items-center overflow-hidden rounded-full border border-ink-900/15 focus-within:border-ink-900"
           onSubmit={(e) => e.preventDefault()}
@@ -77,6 +101,8 @@ export default function SearchPage() {
             기사 제목과 본문에서 찾아드릴게요.
           </p>
         </div>
+      ) : loading ? (
+        <div className="py-20 text-center text-sm text-ink-500">검색 중…</div>
       ) : results.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-2 rounded-lg bg-paper-100 py-20 text-center">
           <p className="text-base font-semibold text-ink-700">
@@ -104,7 +130,7 @@ export default function SearchPage() {
                     />
                   </div>
                 )}
-                <div className="flex min-w-0 flex-col gap-1.5">
+                <div className="flex min-w-0 flex-col gap-1.5 w-full">
                   <SectionTag section={a.section} />
                   <h2 className="line-clamp-2 text-sm font-bold leading-snug text-ink-900 group-hover:text-flash-700 sm:text-base">
                     {a.title}

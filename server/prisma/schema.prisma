@@ -1,0 +1,162 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum ArticleStatus {
+  PENDING_REVIEW
+  PUBLISHED
+  REJECTED
+  ARCHIVED
+}
+
+enum ArticleBlockType {
+  TEXT
+  IMAGE
+  VIDEO
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELLED
+  PAST_DUE
+}
+
+enum PaymentStatus {
+  SUCCESS
+  FAILED
+  PENDING
+}
+
+model User {
+  id            String         @id @default(uuid())
+  username      String         @unique
+  passwordHash  String
+  role          UserRole       @default(USER)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  refreshTokens RefreshToken[]
+  subscriptions Subscription[]
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Section {
+  id       String    @id
+  label    String
+  articles Article[]
+}
+
+model Article {
+  id             String             @id @default(uuid())
+  title          String
+  sectionId      String
+  status         ArticleStatus      @default(PENDING_REVIEW)
+  isVideo        Boolean            @default(false)
+  excerpt        String?
+  reporter       String             @default("발행인")
+  viewCount      Int                @default(0)
+  publishedAt    DateTime?
+  rejectedReason String?
+  sourceUrl      String?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  section        Section            @relation(fields: [sectionId], references: [id])
+  bodyBlocks     ArticleBodyBlock[]
+}
+
+model ArticleBodyBlock {
+  id        String           @id @default(uuid())
+  articleId String
+  type      ArticleBlockType
+  sortOrder Int              @map("order")
+  text      String?
+  mediaUrl  String?
+  filePath  String?
+  caption   String?
+  article   Article          @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@index([articleId, sortOrder])
+}
+
+model MediaAsset {
+  id           String   @id @default(uuid())
+  filename     String
+  originalName String
+  mimeType     String
+  size         Int
+  url          String
+  createdAt    DateTime @default(now())
+}
+
+model SubscriptionPlan {
+  id            String         @id @default(uuid())
+  amount        Int
+  label         String
+  isActive      Boolean        @default(true)
+  subscriptions Subscription[]
+}
+
+model Subscription {
+  id          String             @id @default(uuid())
+  userId      String
+  planId      String
+  status      SubscriptionStatus @default(ACTIVE)
+  billingKey  String?
+  phoneNumber String
+  startedAt   DateTime           @default(now())
+  cancelledAt DateTime?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  user        User               @relation(fields: [userId], references: [id])
+  plan        SubscriptionPlan   @relation(fields: [planId], references: [id])
+  payments    Payment[]
+}
+
+model Payment {
+  id              String        @id @default(uuid())
+  subscriptionId  String
+  amount          Int
+  status          PaymentStatus
+  pgTransactionId String?
+  paidAt          DateTime?
+  createdAt       DateTime      @default(now())
+  subscription    Subscription  @relation(fields: [subscriptionId], references: [id])
+}
+
+model AdSlot {
+  id             String          @id
+  label          String
+  advertisements Advertisement[]
+}
+
+model Advertisement {
+  id              String   @id @default(uuid())
+  slotId          String
+  imageUrl        String
+  linkUrl         String
+  startAt         DateTime
+  endAt           DateTime
+  isActive        Boolean  @default(true)
+  impressionCount Int      @default(0)
+  clickCount      Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  slot            AdSlot   @relation(fields: [slotId], references: [id])
+}

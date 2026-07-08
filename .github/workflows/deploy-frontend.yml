@@ -1,0 +1,82 @@
+name: Deploy Frontend
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "version-4/**"
+      - ".github/workflows/deploy-frontend.yml"
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: ap-northeast-2
+  NODE_VERSION: "22"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: version-4/package-lock.json
+
+      - name: Install and build
+        working-directory: version-4
+        env:
+          # Render render.yaml의 VITE_SITE_URL과 동일
+          VITE_SITE_URL: https://newsin.kr
+          # API가 별도 도메인이면 GitHub Secrets에 등록
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+        run: |
+          npm ci
+          npm run build
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Sync to S3
+        run: |
+          aws s3 sync version-4/dist "s3://${{ secrets.FRONTEND_S3_BUCKET }}" \
+            --delete \
+            --cache-control "public, max-age=31536000, immutable" \
+            --exclude "index.html" \
+            --exclude "article/*/index.html" \
+            --exclude "section/*/index.html"
+
+          aws s3 cp version-4/dist/index.html "s3://${{ secrets.FRONTEND_S3_BUCKET }}/index.html" \
+            --cache-control "no-cache, no-store, must-revalidate"
+
+          if [ -d version-4/dist/article ]; then
+            aws s3 sync version-4/dist/article "s3://${{ secrets.FRONTEND_S3_BUCKET }}/article" \
+              --cache-control "no-cache, no-store, must-revalidate" \
+              --exclude "*" \
+              --include "*/index.html"
+          fi
+
+          if [ -d version-4/dist/section ]; then
+            aws s3 sync version-4/dist/section "s3://${{ secrets.FRONTEND_S3_BUCKET }}/section" \
+              --cache-control "no-cache, no-store, must-revalidate" \
+              --exclude "*" \
+              --include "*/index.html"
+          fi
+
+      - name: Invalidate CloudFront cache
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id "${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}" \
+            --paths "/*"

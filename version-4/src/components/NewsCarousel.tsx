@@ -2,7 +2,6 @@ import { useRef } from "react";
 import { Link } from "react-router-dom";
 import type { Article } from "../types/news";
 import SectionTag from "./SectionTag";
-import { formatTimeAgo } from "../utils/format";
 import { resolveMediaUrl } from "../utils/media";
 
 interface Props {
@@ -50,14 +49,12 @@ export default function NewsCarousel({ title, articles, moreHref }: Props) {
               className="group w-44 shrink-0 sm:w-56"
             >
               <div className="relative overflow-hidden rounded-md bg-ink-100">
-                {a.image && (
-                  <img
-                    src={resolveMediaUrl(a.image)}
-                    alt=""
-                    className="aspect-[4/3] w-full object-cover transition duration-500 group-hover:scale-105"
-                    loading="lazy"
-                  />
-                )}
+                <img
+                  src={resolveMediaUrl(a.image ?? "")}
+                  alt=""
+                  className="aspect-[4/3] w-full object-cover transition duration-500 group-hover:scale-105"
+                  loading="lazy"
+                />
                 {a.isVideo && (
                   <span className="absolute inset-0 flex items-center justify-center">
                     <span className="flex h-10 w-10 items-center justify-center rounded-full bg-ink-950/60 text-white backdrop-blur-sm">
@@ -71,9 +68,6 @@ export default function NewsCarousel({ title, articles, moreHref }: Props) {
                 <h3 className="line-clamp-2 text-sm font-bold leading-snug text-ink-900 group-hover:text-flash-700">
                   {a.title}
                 </h3>
-                <p className="text-xs text-ink-500">
-                  {formatTimeAgo(a.publishedAt)}
-                </p>
               </div>
             </Link>
           ))}

@@ -1,9 +1,37 @@
-import { Link } from 'react-router-dom'
-import { hotIssues } from '../data/articles'
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { fetchArticles } from "../lib/articles";
+import type { HotIssueItem } from "../types/news";
 
 export default function HotIssueTicker() {
-  // 끊김 없는 무한 스크롤을 위해 두 번 렌더링
-  const items = [...hotIssues, ...hotIssues]
+  const [hotIssues, setHotIssues] = useState<HotIssueItem[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    fetchArticles({ limit: 5 })
+      .then((articles) => {
+        if (!cancelled) {
+          setHotIssues(
+            articles.map((article) => ({
+              id: article.id,
+              title: article.title,
+            })),
+          );
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setHotIssues([]);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (hotIssues.length === 0) return null;
+
+  const items = [...hotIssues, ...hotIssues];
 
   return (
     <div className="flex items-stretch border-b border-ink-900/10 bg-flash-100">
@@ -28,5 +56,5 @@ export default function HotIssueTicker() {
         </ul>
       </div>
     </div>
-  )
+  );
 }

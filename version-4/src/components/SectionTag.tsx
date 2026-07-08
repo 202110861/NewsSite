@@ -2,16 +2,17 @@ import type { SectionId } from "../types/news";
 import { sectionMap } from "../data/sections";
 
 const accentBg: Record<SectionId, string> = {
-  politics: "bg-section-politics",
-  economy: "bg-section-economy",
-  society: "bg-section-society",
-  culture: "bg-section-culture",
-  entertainment: "bg-section-entertainment",
-  local: "bg-section-local",
-  event: "bg-section-event",
-  video: "bg-section-video",
-  cardNews: "bg-section-cardNews",
-};
+  politics: 'bg-section-politics',
+  economy: 'bg-section-economy',
+  society: 'bg-section-society',
+  culture: 'bg-section-culture',
+  entertainment: 'bg-section-entertainment',
+  local: 'bg-section-local',
+  event: 'bg-section-event',
+  video: 'bg-section-video',
+  cardNews: 'bg-section-cardNews',
+  shorts: 'bg-section-shorts',
+}
 
 export default function SectionTag({ section }: { section: SectionId }) {
   const meta = sectionMap[section];
