@@ -1,5 +1,5 @@
 node_modules
 dist
 .env
-uploads
+/uploads
 newssite-api-key.pem
