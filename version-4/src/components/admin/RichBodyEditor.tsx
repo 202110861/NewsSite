@@ -27,7 +27,7 @@ function blockSrc(block: Pick<BodyBlockInput, "mediaUrl" | "filePath">) {
   return "";
 }
 
-export function blocksToHtml(blocks: BodyBlockInput[]): string {
+function blocksToHtml(blocks: BodyBlockInput[]): string {
   return blocks
     .map((block) => {
       if (block.type === "TEXT") {
@@ -49,7 +49,7 @@ export function blocksToHtml(blocks: BodyBlockInput[]): string {
     .join("");
 }
 
-export function htmlToBlocks(container: HTMLElement): BodyBlockInput[] {
+function htmlToBlocks(container: HTMLElement): BodyBlockInput[] {
   const blocks: BodyBlockInput[] = [];
 
   container.childNodes.forEach((node) => {

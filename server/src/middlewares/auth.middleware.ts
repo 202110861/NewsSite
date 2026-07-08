@@ -49,29 +49,3 @@ export function authMiddleware(
     res.status(401).json({ message: "유효하지 않은 토큰입니다." });
   }
 }
-
-export function optionalAuthMiddleware(
-  req: AuthRequest,
-  _res: Response,
-  next: NextFunction,
-): void {
-  if (tryAutomationApiKey(req)) {
-    next();
-    return;
-  }
-
-  const header = req.headers.authorization;
-  if (header?.startsWith("Bearer ")) {
-    try {
-      const payload = verifyAccessToken(header.slice(7));
-      req.user = {
-        id: payload.sub,
-        username: payload.username,
-        role: payload.role,
-      };
-    } catch {
-      // ignore invalid token
-    }
-  }
-  next();
-}
