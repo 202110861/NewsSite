@@ -42,7 +42,7 @@ const upload = multer({
       cb(null, true);
       return;
     }
-    cb(new Error("이미지 또는 동영상 파일만 업로드할 수 있습니다."));
+    cb(new AppError(400, "이미지 또는 동영상 파일만 업로드할 수 있습니다."));
   },
 });
 

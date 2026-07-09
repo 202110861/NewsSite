@@ -18,6 +18,16 @@ npm run build
 echo "Applying database schema..."
 npx prisma db push --skip-generate
 
+echo "Ensuring upload directories..."
+DEPLOY_USER="$(whoami)"
+mkdir -p uploads/images uploads/videos
+if ! touch uploads/images/.write-test 2>/dev/null; then
+  echo "Fixing uploads directory ownership for ${DEPLOY_USER}..."
+  sudo chown -R "${DEPLOY_USER}:${DEPLOY_USER}" uploads
+fi
+rm -f uploads/images/.write-test 2>/dev/null || true
+chmod -R u+rwX,g+rX uploads
+
 echo "Restarting application..."
 if pm2 describe newssite-server > /dev/null 2>&1; then
   pm2 reload ecosystem.config.cjs --env production
