@@ -92,7 +92,11 @@ async function request<T>(
   return res.json() as Promise<T>;
 }
 
-async function uploadRequest<T>(path: string, formData: FormData): Promise<T> {
+async function uploadRequest<T>(
+  path: string,
+  formData: FormData,
+  retry = true,
+): Promise<T> {
   const headers = new Headers();
   if (accessToken) {
     headers.set("Authorization", `Bearer ${accessToken}`);
@@ -104,6 +108,11 @@ async function uploadRequest<T>(path: string, formData: FormData): Promise<T> {
     body: formData,
     credentials: "include",
   });
+
+  if (res.status === 401 && retry && !path.startsWith("/auth/")) {
+    const newToken = await refreshAccessToken();
+    if (newToken) return uploadRequest<T>(path, formData, false);
+  }
 
   if (!res.ok) {
     const body = (await res.json().catch(() => ({}))) as { message?: string };
