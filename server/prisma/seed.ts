@@ -1,26 +1,11 @@
-import { copyFileSync, mkdirSync, readdirSync } from 'node:fs'
-import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { PrismaClient } from '@prisma/client'
-import { hashPassword } from '../src/utils/password.js'
+import {
+  importFrontendImages,
+  seedAdminUser,
+  seedSections,
+} from './seed-shared.js'
 
 const prisma = new PrismaClient()
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const uploadsImagesDir = path.resolve(__dirname, '../uploads/images')
-const frontendImagesDir = path.resolve(__dirname, '../../version-4/src/images')
-
-const sections = [
-  { id: 'politics', label: '정치' },
-  { id: 'economy', label: '경제' },
-  { id: 'society', label: '사회' },
-  { id: 'culture', label: '문화/전시' },
-  { id: 'entertainment', label: '연예/스포츠' },
-  { id: 'local', label: '지역뉴스' },
-  { id: 'event', label: '이벤트/행사' },
-  { id: 'video', label: '영상뉴스' },
-  { id: 'cardNews', label: '카드뉴스' },
-  { id: 'shorts', label: '숏컷뉴스' },
-]
 
 const adSlots = [
   { id: 'home_side_left', label: '홈 좌측 배너' },
@@ -34,54 +19,8 @@ const plans = [
   { amount: 9000, label: '특별 후원' },
 ]
 
-async function importFrontendImages() {
-  mkdirSync(uploadsImagesDir, { recursive: true })
-  const imported: Record<string, string> = {}
-
-  try {
-    const files = readdirSync(frontendImagesDir).filter((name) =>
-      /\.(jpg|jpeg|png|gif|webp)$/i.test(name),
-    )
-
-    for (const originalName of files) {
-      const destName = originalName
-      const sourcePath = path.join(frontendImagesDir, originalName)
-      const destPath = path.join(uploadsImagesDir, destName)
-      copyFileSync(sourcePath, destPath)
-
-      const filePath = `images/${destName}`
-      const url = `/uploads/${filePath}`
-
-      await prisma.mediaAsset.upsert({
-        where: { id: originalName },
-        update: { url, filename: destName, originalName, mimeType: 'image/jpeg', size: 0 },
-        create: {
-          id: originalName,
-          filename: destName,
-          originalName,
-          mimeType: 'image/jpeg',
-          size: 0,
-          url,
-        },
-      })
-
-      imported[originalName] = filePath
-    }
-  } catch {
-    console.warn('프론트 이미지 폴더를 찾지 못했습니다. 샘플 기사 이미지는 건너뜁니다.')
-  }
-
-  return imported
-}
-
 async function main() {
-  for (const section of sections) {
-    await prisma.section.upsert({
-      where: { id: section.id },
-      update: { label: section.label },
-      create: section,
-    })
-  }
+  await seedSections(prisma)
 
   for (const slot of adSlots) {
     await prisma.adSlot.upsert({
@@ -98,16 +37,7 @@ async function main() {
     }
   }
 
-  const adminHash = await hashPassword('Songdo94!')
-  await prisma.user.upsert({
-    where: { username: 'lawform0511' },
-    update: { passwordHash: adminHash, role: 'ADMIN' },
-    create: {
-      username: 'lawform0511',
-      passwordHash: adminHash,
-      role: 'ADMIN',
-    },
-  })
+  await seedAdminUser(prisma)
 
   const now = new Date()
   const end = new Date(now)
@@ -140,7 +70,7 @@ async function main() {
     }
   }
 
-  await importFrontendImages()
+  await importFrontendImages(prisma)
 
   console.log('Seed completed. 기사 데이터는 npm run db:import-mockdata 로 넣으세요.')
 }
