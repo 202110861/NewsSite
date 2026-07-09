@@ -2,7 +2,15 @@ import { useEffect, useRef } from "react";
 import { uploadMedia } from "../../lib/admin";
 import type { EditableBlock } from "../../utils/articleBlocks";
 import { stripBlockKeys, withBlockKeys } from "../../utils/articleBlocks";
-import { blockToHtml, appendEditorParagraph, blocksToHtml, htmlToBlocks } from "../../utils/bodyEditorHtml";
+import { getApiErrorMessage } from "../../lib/errors";
+import {
+  appendEditorParagraph,
+  blockToHtml,
+  blocksToHtml,
+  htmlToBlocks,
+  insertHtmlInEditor,
+  saveEditorSelection,
+} from "../../utils/bodyEditorHtml";
 
 interface Props {
   blocks: EditableBlock[];
@@ -76,6 +84,7 @@ function findAdjacentFigure(
 export default function ArticleInlineEditBody({ blocks, onChange }: Props) {
   const editorRef = useRef<HTMLDivElement>(null);
   const skipRender = useRef(false);
+  const lastSelectionRef = useRef<Range | null>(null);
 
   useEffect(() => {
     if (!editorRef.current || skipRender.current) return;
@@ -84,6 +93,21 @@ export default function ArticleInlineEditBody({ blocks, onChange }: Props) {
       plainBlocks.length > 0 ? plainBlocks : [{ type: "TEXT", text: "" }],
     );
   }, [blocks]);
+
+  useEffect(() => {
+    const editor = editorRef.current;
+    if (!editor) return;
+
+    function trackSelection() {
+      const saved = saveEditorSelection(editor!);
+      if (saved) {
+        lastSelectionRef.current = saved;
+      }
+    }
+
+    document.addEventListener("selectionchange", trackSelection);
+    return () => document.removeEventListener("selectionchange", trackSelection);
+  }, []);
 
   function serialize() {
     if (!editorRef.current) return;
@@ -100,23 +124,32 @@ export default function ArticleInlineEditBody({ blocks, onChange }: Props) {
     if (!items) return;
 
     for (const item of Array.from(items)) {
-      if (item.type.startsWith("image/")) {
-        e.preventDefault();
-        const file = item.getAsFile();
-        if (!file) return;
+      if (!item.type.startsWith("image/")) continue;
 
+      const editor = editorRef.current;
+      if (!editor) return;
+
+      const savedRange = saveEditorSelection(editor);
+      e.preventDefault();
+
+      const file = item.getAsFile();
+      if (!file) return;
+
+      try {
         const uploaded = await uploadMedia(file);
-        document.execCommand(
-          "insertHTML",
-          false,
+        insertHtmlInEditor(
+          editor,
           blockToHtml({
             type: "IMAGE",
             filePath: uploaded.filePath,
           }) + appendEditorParagraph(),
+          savedRange,
         );
         serialize();
-        return;
+      } catch (err) {
+        console.error(getApiErrorMessage(err, "이미지 업로드에 실패했습니다."));
       }
+      return;
     }
   }
 
