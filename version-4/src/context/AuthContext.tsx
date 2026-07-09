@@ -7,7 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { api, setAccessToken, type AuthUser } from "../lib/api";
+import { api, refreshSession, setAccessToken, type AuthUser } from "../lib/api";
 
 interface AuthContextValue {
   user: AuthUser | null;
@@ -24,16 +24,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const refreshUser = useCallback(async () => {
-    try {
-      const refreshed = await api.post<{ accessToken: string; user: AuthUser }>(
-        "/auth/refresh",
-      );
-      setAccessToken(refreshed.accessToken);
-      setUser(refreshed.user);
-    } catch {
-      setAccessToken(null);
-      setUser(null);
-    }
+    const user = await refreshSession();
+    setUser(user);
   }, []);
 
   useEffect(() => {

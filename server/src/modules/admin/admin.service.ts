@@ -1,4 +1,3 @@
-import { z } from "zod";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "../../db/client.js";
 import { AppError } from "../../middlewares/errorHandler.middleware.js";
@@ -8,46 +7,24 @@ import {
   buildBlocksCreateData,
   deriveArticleFlags,
   toFrontendArticle,
+  type ArticleStatus,
   type BodyBlockInput,
   type CreateArticleInput,
 } from "../articles/article.mapper.js";
+import {
+  adminCreateArticleSchema,
+  adminUpdateArticleSchema,
+  bulkDeleteSchema,
+  rejectSchema,
+} from "../articles/article.validation.js";
 
-export type ArticleStatus =
-  | "PENDING_REVIEW"
-  | "PUBLISHED"
-  | "REJECTED"
-  | "ARCHIVED";
-
-const bodyBlockSchema = z.object({
-  type: z.enum(["TEXT", "IMAGE", "VIDEO"]),
-  text: z.string().optional(),
-  mediaUrl: z.string().optional(),
-  filePath: z.string().optional(),
-  caption: z.string().optional(),
-});
-
-export const createArticleSchema = z.object({
-  title: z.string().min(1),
-  sectionId: z.string().min(1),
-  excerpt: z.string().optional(),
-  reporter: z.string().optional(),
-  sourceUrl: z.string().optional(),
-  blocks: z.array(bodyBlockSchema).min(1),
-});
-
-export const updateArticleSchema = z.object({
-  title: z.string().min(1).optional(),
-  sectionId: z.string().min(1).optional(),
-  excerpt: z.string().optional(),
-  reporter: z.string().optional(),
-  sourceUrl: z.string().optional(),
-  blocks: z.array(bodyBlockSchema).optional(),
-});
-
-export const rejectSchema = z.object({ reason: z.string().min(1) });
-export const bulkDeleteSchema = z.object({
-  ids: z.array(z.string().min(1)).min(1),
-});
+export type { ArticleStatus };
+export {
+  adminCreateArticleSchema as createArticleSchema,
+  adminUpdateArticleSchema as updateArticleSchema,
+  bulkDeleteSchema,
+  rejectSchema,
+};
 
 function toAdminArticle(
   article: Prisma.ArticleGetPayload<{ include: typeof articleInclude }>,

@@ -2,8 +2,7 @@ import { useEffect, useRef } from "react";
 import { uploadMedia } from "../../lib/admin";
 import type { EditableBlock } from "../../utils/articleBlocks";
 import { stripBlockKeys, withBlockKeys } from "../../utils/articleBlocks";
-import { blocksToHtml, htmlToBlocks } from "../../utils/bodyEditorHtml";
-import { resolveMediaUrl } from "../../utils/media";
+import { blockToHtml, appendEditorParagraph, blocksToHtml, htmlToBlocks } from "../../utils/bodyEditorHtml";
 
 interface Props {
   blocks: EditableBlock[];
@@ -107,11 +106,13 @@ export default function ArticleInlineEditBody({ blocks, onChange }: Props) {
         if (!file) return;
 
         const uploaded = await uploadMedia(file);
-        const src = resolveMediaUrl(uploaded.url);
         document.execCommand(
           "insertHTML",
           false,
-          `<figure contenteditable="false" data-block-type="IMAGE" data-media-url="" data-file-path="${uploaded.filePath}" data-caption=""><div class="overflow-hidden rounded-lg bg-ink-100"><img src="${src}" alt="" class="w-full object-cover" /></div></figure><p><br></p>`,
+          blockToHtml({
+            type: "IMAGE",
+            filePath: uploaded.filePath,
+          }) + appendEditorParagraph(),
         );
         serialize();
         return;

@@ -1,18 +1,17 @@
-import { copyFileSync, existsSync, mkdirSync, readdirSync } from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { PrismaClient } from "@prisma/client";
-import { hashPassword } from "../src/utils/password.js";
 import {
+  buildBlocksCreateData,
   deriveArticleFlags,
   type BodyBlockInput,
 } from "../src/modules/articles/article.mapper.js";
 import { articlesById } from "./mockdata.js";
+import {
+  importFrontendImages,
+  seedAdminUser,
+  seedSections,
+} from "./seed-shared.js";
 
 const prisma = new PrismaClient();
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const uploadsImagesDir = path.resolve(__dirname, "../uploads/images");
-const frontendImagesDir = path.resolve(__dirname, "../../version-4/src/images");
 
 type MockBodyBlock = string | { type: "image"; src: string; caption?: string };
 
@@ -30,70 +29,12 @@ interface MockArticle {
   body?: MockBodyBlock[];
 }
 
-const sections = [
-  { id: "politics", label: "정치" },
-  { id: "economy", label: "경제" },
-  { id: "society", label: "사회" },
-  { id: "culture", label: "문화/전시" },
-  { id: "entertainment", label: "연예/스포츠" },
-  { id: "local", label: "지역뉴스" },
-  { id: "event", label: "이벤트/행사" },
-  { id: "video", label: "영상뉴스" },
-  { id: "cardNews", label: "카드뉴스" },
-  { id: "shorts", label: "숏컷뉴스" },
-];
-
 function isExternalUrl(src: string) {
   return /^https?:\/\//i.test(src);
 }
 
 function basename(src: string) {
   return src.split("/").pop() ?? src;
-}
-
-async function copyLocalImages() {
-  mkdirSync(uploadsImagesDir, { recursive: true });
-  const filePathByName: Record<string, string> = {};
-
-  if (!existsSync(frontendImagesDir)) {
-    console.warn("프론트 이미지 폴더를 찾지 못했습니다.");
-    return filePathByName;
-  }
-
-  const files = readdirSync(frontendImagesDir).filter((name) =>
-    /\.(jpg|jpeg|png|gif|webp)$/i.test(name),
-  );
-
-  for (const originalName of files) {
-    const sourcePath = path.join(frontendImagesDir, originalName);
-    const destPath = path.join(uploadsImagesDir, originalName);
-    copyFileSync(sourcePath, destPath);
-
-    const filePath = `images/${originalName}`;
-    const url = `/uploads/${filePath}`;
-    filePathByName[originalName] = filePath;
-
-    await prisma.mediaAsset.upsert({
-      where: { id: originalName },
-      update: {
-        url,
-        filename: originalName,
-        originalName,
-        mimeType: "image/jpeg",
-        size: 0,
-      },
-      create: {
-        id: originalName,
-        filename: originalName,
-        originalName,
-        mimeType: "image/jpeg",
-        size: 0,
-        url,
-      },
-    });
-  }
-
-  return filePathByName;
 }
 
 function resolveMediaRef(
@@ -158,37 +99,14 @@ function convertArticle(
     reporter: article.reporter ?? "발행인",
     publishedAt: new Date(article.publishedAt),
     bodyBlocks: {
-      create: blocks.map((block, index) => ({
-        type: block.type,
-        sortOrder: index,
-        text: block.type === "TEXT" ? (block.text ?? "") : null,
-        mediaUrl: block.type !== "TEXT" ? (block.mediaUrl ?? null) : null,
-        filePath: block.type !== "TEXT" ? (block.filePath ?? null) : null,
-        caption: block.caption ?? null,
-      })),
+      create: buildBlocksCreateData(blocks),
     },
   };
 }
 
 async function seedBase() {
-  for (const section of sections) {
-    await prisma.section.upsert({
-      where: { id: section.id },
-      update: { label: section.label },
-      create: section,
-    });
-  }
-
-  const adminHash = await hashPassword("Songdo94!");
-  await prisma.user.upsert({
-    where: { username: "lawform0511" },
-    update: { passwordHash: adminHash, role: "ADMIN" },
-    create: {
-      username: "lawform0511",
-      passwordHash: adminHash,
-      role: "ADMIN",
-    },
-  });
+  await seedSections(prisma);
+  await seedAdminUser(prisma);
 }
 
 async function main() {
@@ -197,7 +115,7 @@ async function main() {
   console.log(`mockdata 기사 ${articles.length}건 변환 시작...`);
 
   await seedBase();
-  const localImages = await copyLocalImages();
+  const localImages = await importFrontendImages(prisma);
 
   const deleted = await prisma.article.deleteMany();
   console.log(`기존 기사 ${deleted.count}건 삭제`);

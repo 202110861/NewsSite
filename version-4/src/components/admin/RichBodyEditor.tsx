@@ -1,90 +1,16 @@
 import { useEffect, useRef } from "react";
 import type { BodyBlockInput } from "../../types/news";
 import { uploadMedia } from "../../lib/admin";
-import { resolveMediaUrl } from "../../utils/media";
+import {
+  appendEditorParagraph,
+  blockToHtml,
+  blocksToHtml,
+  htmlToBlocks,
+} from "../../utils/bodyEditorHtml";
 
 interface Props {
   value: BodyBlockInput[];
   onChange: (blocks: BodyBlockInput[]) => void;
-}
-
-function escapeHtml(text: string) {
-  return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
-
-function blockSrc(block: Pick<BodyBlockInput, "mediaUrl" | "filePath">) {
-  if (block.mediaUrl) return resolveMediaUrl(block.mediaUrl);
-  if (block.filePath) {
-    const path = block.filePath.startsWith("/uploads/")
-      ? block.filePath
-      : `/uploads/${block.filePath}`;
-    return resolveMediaUrl(path);
-  }
-  return "";
-}
-
-function blocksToHtml(blocks: BodyBlockInput[]): string {
-  return blocks
-    .map((block) => {
-      if (block.type === "TEXT") {
-        const text = block.text ?? "";
-        if (!text.trim()) return "<p><br></p>";
-        return `<p>${escapeHtml(text).replace(/\n/g, "<br>")}</p>`;
-      }
-      if (block.type === "IMAGE") {
-        const src = blockSrc(block);
-        return `<figure contenteditable="false" data-block-type="IMAGE" data-media-url="${block.mediaUrl ?? ""}" data-file-path="${block.filePath ?? ""}" data-caption="${escapeHtml(block.caption ?? "")}"><img src="${src}" alt="${escapeHtml(block.caption ?? "")}" class="max-w-full rounded-lg" /></figure>`;
-      }
-      const src = blockSrc(block);
-      const isYoutube = /youtu\.be|youtube\.com/.test(block.mediaUrl ?? "");
-      if (isYoutube && block.mediaUrl) {
-        return `<figure contenteditable="false" data-block-type="VIDEO" data-media-url="${block.mediaUrl}" data-file-path="" data-caption="${escapeHtml(block.caption ?? "")}"><div class="rounded-lg bg-ink-100 px-3 py-2 text-sm text-ink-600">동영상 URL: ${escapeHtml(block.mediaUrl)}</div></figure>`;
-      }
-      return `<figure contenteditable="false" data-block-type="VIDEO" data-media-url="${block.mediaUrl ?? ""}" data-file-path="${block.filePath ?? ""}" data-caption="${escapeHtml(block.caption ?? "")}"><video src="${src}" controls class="max-w-full rounded-lg"></video></figure>`;
-    })
-    .join("");
-}
-
-function htmlToBlocks(container: HTMLElement): BodyBlockInput[] {
-  const blocks: BodyBlockInput[] = [];
-
-  container.childNodes.forEach((node) => {
-    if (node.nodeType === Node.TEXT_NODE) {
-      const text = node.textContent ?? "";
-      if (text.trim()) blocks.push({ type: "TEXT", text });
-      return;
-    }
-
-    if (!(node instanceof HTMLElement)) return;
-
-    if (node.tagName === "FIGURE" && node.dataset.blockType) {
-      const type = node.dataset.blockType as "IMAGE" | "VIDEO";
-      blocks.push({
-        type,
-        mediaUrl: node.dataset.mediaUrl || undefined,
-        filePath: node.dataset.filePath || undefined,
-        caption: node.dataset.caption || undefined,
-      });
-      return;
-    }
-
-    if (node.tagName === "P" || node.tagName === "DIV") {
-      const text = node.innerHTML
-        .replace(/<br\s*\/?>/gi, "\n")
-        .replace(/<[^>]+>/g, "")
-        .replace(/&amp;/g, "&")
-        .replace(/&lt;/g, "<")
-        .replace(/&gt;/g, ">")
-        .replace(/&quot;/g, '"');
-      if (text.trim()) blocks.push({ type: "TEXT", text });
-    }
-  });
-
-  return blocks.length > 0 ? blocks : [{ type: "TEXT", text: "" }];
 }
 
 export default function RichBodyEditor({ value, onChange }: Props) {
@@ -121,7 +47,10 @@ export default function RichBodyEditor({ value, onChange }: Props) {
         document.execCommand(
           "insertHTML",
           false,
-          `<figure contenteditable="false" data-block-type="IMAGE" data-media-url="" data-file-path="${uploaded.filePath}" data-caption=""><img src="${resolveMediaUrl(uploaded.url)}" alt="" class="max-w-full rounded-lg" /></figure><p><br></p>`,
+          blockToHtml({
+            type: "IMAGE",
+            filePath: uploaded.filePath,
+          }) + appendEditorParagraph(),
         );
         serialize();
         return;
@@ -139,9 +68,11 @@ export default function RichBodyEditor({ value, onChange }: Props) {
       if (!url?.trim()) return;
       const caption = window.prompt("캡션 (선택)") ?? "";
       const html =
-        type === "IMAGE"
-          ? `<figure contenteditable="false" data-block-type="IMAGE" data-media-url="${url}" data-file-path="" data-caption="${escapeHtml(caption)}"><img src="${resolveMediaUrl(url)}" alt="${escapeHtml(caption)}" class="max-w-full rounded-lg" /></figure><p><br></p>`
-          : `<figure contenteditable="false" data-block-type="VIDEO" data-media-url="${url}" data-file-path="" data-caption="${escapeHtml(caption)}"><div class="rounded-lg bg-ink-100 px-3 py-2 text-sm text-ink-600">동영상 URL: ${escapeHtml(url)}</div></figure><p><br></p>`;
+        blockToHtml({
+          type,
+          mediaUrl: url,
+          caption: caption || undefined,
+        }) + appendEditorParagraph();
       document.execCommand("insertHTML", false, html);
       serialize();
       return;
@@ -155,9 +86,10 @@ export default function RichBodyEditor({ value, onChange }: Props) {
       if (!file) return;
       const uploaded = await uploadMedia(file);
       const html =
-        type === "IMAGE"
-          ? `<figure contenteditable="false" data-block-type="IMAGE" data-media-url="" data-file-path="${uploaded.filePath}" data-caption=""><img src="${resolveMediaUrl(uploaded.url)}" alt="" class="max-w-full rounded-lg" /></figure><p><br></p>`
-          : `<figure contenteditable="false" data-block-type="VIDEO" data-media-url="" data-file-path="${uploaded.filePath}" data-caption=""><video src="${resolveMediaUrl(uploaded.url)}" controls class="max-w-full rounded-lg"></video></figure><p><br></p>`;
+        blockToHtml({
+          type,
+          filePath: uploaded.filePath,
+        }) + appendEditorParagraph();
       editorRef.current?.focus();
       document.execCommand("insertHTML", false, html);
       serialize();

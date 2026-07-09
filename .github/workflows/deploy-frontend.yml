@@ -36,6 +36,7 @@ jobs:
         working-directory: version-4
         env:
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
+          VITE_SITE_URL: ${{ secrets.VITE_SITE_URL }}
         run: |
           npm ci
           npm run build
