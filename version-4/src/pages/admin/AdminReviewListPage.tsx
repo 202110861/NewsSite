@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ApiError } from "../../lib/api";
+import { getApiErrorMessage } from "../../lib/errors";
 import { bulkDeleteAdminArticles, fetchReviewArticles } from "../../lib/admin";
 import { sectionMap } from "../../data/sections";
 import type { AdminArticle } from "../../types/news";
@@ -21,9 +21,7 @@ export default function AdminReviewListPage() {
       setArticles(data);
       setSelected(new Set());
     } catch (err) {
-      setError(
-        err instanceof ApiError ? err.message : "목록을 불러오지 못했습니다.",
-      );
+      setError(getApiErrorMessage(err, "목록을 불러오지 못했습니다."));
     } finally {
       setLoading(false);
     }
@@ -60,7 +58,7 @@ export default function AdminReviewListPage() {
       await bulkDeleteAdminArticles(Array.from(selected));
       await load();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "삭제에 실패했습니다.");
+      setError(getApiErrorMessage(err, "삭제에 실패했습니다."));
     } finally {
       setDeleting(false);
     }

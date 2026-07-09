@@ -8,6 +8,7 @@ import ArticleAdminMenu from "../components/admin/ArticleAdminMenu";
 import ArticleInlineEditBody from "../components/admin/ArticleInlineEditBody";
 import { useAuth } from "../context/AuthContext";
 import { ApiError } from "../lib/api";
+import { getApiErrorMessage } from "../lib/errors";
 import { fetchAdminArticle, updateAdminArticle } from "../lib/admin";
 import { resolveAbsoluteMediaUrl, resolveMediaUrl } from "../utils/media";
 import {
@@ -20,12 +21,7 @@ import {
 import type { Article, ArticleBodyBlock, SectionId } from "../types/news";
 import { Helmet } from "react-helmet-async";
 
-function youtubeEmbedUrl(url: string): string | null {
-  const match = url.match(
-    /(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([\w-]{11})/,
-  );
-  return match ? `https://www.youtube.com/embed/${match[1]}` : null;
-}
+import { youtubeEmbedUrl } from "../utils/youtube";
 
 function renderBodyBlock(block: ArticleBodyBlock, key: number) {
   if (typeof block === "string") {
@@ -213,9 +209,7 @@ export default function ArticleDetailPage() {
       );
       setIsEditing(false);
     } catch (err) {
-      setEditError(
-        err instanceof ApiError ? err.message : "저장에 실패했습니다.",
-      );
+      setEditError(getApiErrorMessage(err, "저장에 실패했습니다."));
     } finally {
       setSaving(false);
     }

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ApiError } from "../../lib/api";
+import { getApiErrorMessage } from "../../lib/errors";
 import { deleteAdminArticle } from "../../lib/admin";
 
 import type { SectionId } from "../../types/news";
@@ -44,9 +44,7 @@ export default function ArticleAdminMenu({
       await deleteAdminArticle(articleId);
       navigate(`/section/${sectionId}`, { replace: true });
     } catch (err) {
-      const message =
-        err instanceof ApiError ? err.message : "삭제에 실패했습니다.";
-      window.alert(message);
+      window.alert(getApiErrorMessage(err, "삭제에 실패했습니다."));
     } finally {
       setDeleting(false);
       setOpen(false);

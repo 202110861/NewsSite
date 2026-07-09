@@ -1,13 +1,7 @@
 import type { Article, ArticleBodyBlock, BodyBlockInput } from "../types/news";
+import { youtubeThumbnailUrl } from "./youtube";
 
 export type EditableBlock = BodyBlockInput & { key: string };
-
-function youtubeThumbnailUrl(url: string): string | null {
-  const match = url.match(
-    /(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([\w-]{11})/,
-  );
-  return match ? `https://img.youtube.com/vi/${match[1]}/hqdefault.jpg` : null;
-}
 
 function blockMediaSrc(block: BodyBlockInput): string {
   if (block.mediaUrl) return block.mediaUrl;
@@ -41,6 +35,20 @@ export function deriveCoverFromBlocks(blocks: BodyBlockInput[]): {
   }
 
   return { image: src, isVideo: false };
+}
+
+export function isValidBodyBlock(block: BodyBlockInput): boolean {
+  if (block.type === "TEXT") return (block.text ?? "").trim().length > 0;
+  return Boolean(block.mediaUrl || block.filePath);
+}
+
+export function sanitizeBodyBlocks(
+  blocks: BodyBlockInput[],
+  emptyFallback = true,
+): BodyBlockInput[] {
+  const cleaned = blocks.filter(isValidBodyBlock);
+  if (!emptyFallback) return cleaned;
+  return cleaned.length > 0 ? cleaned : [{ type: "TEXT", text: " " }];
 }
 
 export function withBlockKeys(blocks: BodyBlockInput[]): EditableBlock[] {
@@ -116,10 +124,7 @@ export function articleBlocksToBodyInput(
         caption: block.caption,
       };
     })
-    .filter((block) => {
-      if (block.type === "TEXT") return (block.text ?? "").trim().length > 0;
-      return Boolean(block.mediaUrl || block.filePath);
-    });
+    .filter(isValidBodyBlock);
 }
 
 export function blocksToArticleBody(

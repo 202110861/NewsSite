@@ -1,5 +1,6 @@
 import type { BodyBlockInput } from "../types/news";
 import { resolveMediaUrl } from "./media";
+import { extractYoutubeId, isYoutubeUrl } from "./youtube";
 
 export function escapeHtml(text: string) {
   return text
@@ -20,29 +21,33 @@ export function blockSrc(block: Pick<BodyBlockInput, "mediaUrl" | "filePath">) {
   return "";
 }
 
+export function blockToHtml(block: BodyBlockInput): string {
+  if (block.type === "TEXT") {
+    const text = block.text ?? "";
+    if (!text.trim()) return "<p><br></p>";
+    return `<p>${escapeHtml(text).replace(/\n/g, "<br>")}</p>`;
+  }
+
+  if (block.type === "IMAGE") {
+    const src = blockSrc(block);
+    return `<figure contenteditable="false" data-block-type="IMAGE" data-media-url="${block.mediaUrl ?? ""}" data-file-path="${block.filePath ?? ""}" data-caption="${escapeHtml(block.caption ?? "")}"><div class="overflow-hidden rounded-lg bg-ink-100"><img src="${src}" alt="${escapeHtml(block.caption ?? "")}" class="w-full object-cover" /></div></figure>`;
+  }
+
+  const src = blockSrc(block);
+  if (isYoutubeUrl(block.mediaUrl ?? "") && block.mediaUrl) {
+    const youtubeId = extractYoutubeId(block.mediaUrl) ?? "";
+    return `<figure contenteditable="false" data-block-type="VIDEO" data-media-url="${block.mediaUrl}" data-file-path="" data-caption="${escapeHtml(block.caption ?? "")}"><div class="overflow-hidden rounded-lg bg-ink-100"><div class="aspect-video"><iframe src="https://www.youtube.com/embed/${youtubeId}" class="h-full w-full" allowfullscreen></iframe></div></div></figure>`;
+  }
+
+  return `<figure contenteditable="false" data-block-type="VIDEO" data-media-url="${block.mediaUrl ?? ""}" data-file-path="${block.filePath ?? ""}" data-caption="${escapeHtml(block.caption ?? "")}"><div class="overflow-hidden rounded-lg bg-ink-100"><video src="${src}" controls class="w-full"></video></div></figure>`;
+}
+
 export function blocksToHtml(blocks: BodyBlockInput[]): string {
-  return blocks
-    .map((block) => {
-      if (block.type === "TEXT") {
-        const text = block.text ?? "";
-        if (!text.trim()) return "<p><br></p>";
-        return `<p>${escapeHtml(text).replace(/\n/g, "<br>")}</p>`;
-      }
+  return blocks.map(blockToHtml).join("");
+}
 
-      if (block.type === "IMAGE") {
-        const src = blockSrc(block);
-        return `<figure contenteditable="false" data-block-type="IMAGE" data-media-url="${block.mediaUrl ?? ""}" data-file-path="${block.filePath ?? ""}" data-caption="${escapeHtml(block.caption ?? "")}"><div class="overflow-hidden rounded-lg bg-ink-100"><img src="${src}" alt="${escapeHtml(block.caption ?? "")}" class="w-full object-cover" /></div></figure>`;
-      }
-
-      const src = blockSrc(block);
-      const isYoutube = /youtu\.be|youtube\.com/.test(block.mediaUrl ?? "");
-      if (isYoutube && block.mediaUrl) {
-        return `<figure contenteditable="false" data-block-type="VIDEO" data-media-url="${block.mediaUrl}" data-file-path="" data-caption="${escapeHtml(block.caption ?? "")}"><div class="overflow-hidden rounded-lg bg-ink-100"><div class="aspect-video"><iframe src="https://www.youtube.com/embed/${block.mediaUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([\w-]{11})/)?.[1] ?? ""}" class="h-full w-full" allowfullscreen></iframe></div></div></figure>`;
-      }
-
-      return `<figure contenteditable="false" data-block-type="VIDEO" data-media-url="${block.mediaUrl ?? ""}" data-file-path="${block.filePath ?? ""}" data-caption="${escapeHtml(block.caption ?? "")}"><div class="overflow-hidden rounded-lg bg-ink-100"><video src="${src}" controls class="w-full"></video></div></figure>`;
-    })
-    .join("");
+export function appendEditorParagraph(): string {
+  return "<p><br></p>";
 }
 
 export function htmlToBlocks(container: HTMLElement): BodyBlockInput[] {

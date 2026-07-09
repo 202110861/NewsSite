@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ApiError } from "../../lib/api";
+import { getApiErrorMessage } from "../../lib/errors";
 import {
   approveAdminArticle,
   createAdminArticle,
@@ -10,6 +10,7 @@ import {
 } from "../../lib/admin";
 import RichBodyEditor from "../../components/admin/RichBodyEditor";
 import { sections } from "../../data/sections";
+import { sanitizeBodyBlocks } from "../../utils/articleBlocks";
 import type { BodyBlockInput, SectionId } from "../../types/news";
 
 export default function AdminArticleFormPage() {
@@ -46,11 +47,7 @@ export default function AdminArticleFormPage() {
       })
       .catch((err) => {
         if (!cancelled) {
-          setError(
-            err instanceof ApiError
-              ? err.message
-              : "기사를 불러오지 못했습니다.",
-          );
+          setError(getApiErrorMessage(err, "기사를 불러오지 못했습니다."));
         }
       })
       .finally(() => {
@@ -63,13 +60,7 @@ export default function AdminArticleFormPage() {
   }, [id, isNew]);
 
   function normalizedBlocks() {
-    const cleaned = blocks.filter((block) => {
-      if (block.type === "TEXT") return (block.text ?? "").trim().length > 0;
-      return Boolean(block.mediaUrl || block.filePath);
-    });
-    return cleaned.length > 0
-      ? cleaned
-      : [{ type: "TEXT" as const, text: " " }];
+    return sanitizeBodyBlocks(blocks);
   }
 
   async function handleSubmit(e: FormEvent) {
@@ -96,7 +87,7 @@ export default function AdminArticleFormPage() {
         navigate("/admin/reviews");
       }
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "저장에 실패했습니다.");
+      setError(getApiErrorMessage(err, "저장에 실패했습니다."));
     } finally {
       setSubmitting(false);
     }
@@ -112,7 +103,7 @@ export default function AdminArticleFormPage() {
       await deleteAdminArticle(id);
       navigate("/admin/reviews");
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "삭제에 실패했습니다.");
+      setError(getApiErrorMessage(err, "삭제에 실패했습니다."));
     } finally {
       setSubmitting(false);
     }
@@ -133,7 +124,7 @@ export default function AdminArticleFormPage() {
       await approveAdminArticle(id);
       navigate("/admin/reviews");
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "승인에 실패했습니다.");
+      setError(getApiErrorMessage(err, "승인에 실패했습니다."));
     } finally {
       setSubmitting(false);
     }

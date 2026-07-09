@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ApiError, api } from '../lib/api'
+import { api } from '../lib/api'
+import { getApiErrorMessage } from '../lib/errors'
 
 export default function SignupPage() {
   const navigate = useNavigate()
@@ -23,7 +24,7 @@ export default function SignupPage() {
       )
       setUsernameCheck(result.available ? 'available' : 'taken')
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : '중복 확인에 실패했습니다.')
+      setError(getApiErrorMessage(err, '중복 확인에 실패했습니다.'))
     }
   }
 
@@ -45,7 +46,7 @@ export default function SignupPage() {
       await api.post('/auth/signup', { username, password })
       navigate('/login', { state: { message: '회원가입이 완료되었습니다. 로그인해 주세요.' } })
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : '회원가입에 실패했습니다.')
+      setError(getApiErrorMessage(err, '회원가입에 실패했습니다.'))
     } finally {
       setSubmitting(false)
     }

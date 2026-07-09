@@ -9,10 +9,8 @@ import SignupPage from "./pages/SignupPage";
 import LoginPage from "./pages/LoginPage";
 import SupportPage from "./pages/SupportPage";
 import SupportCompletePage from "./pages/SupportCompletePage";
-import AdminRoute from "./components/AdminRoute";
 import AdminReviewListPage from "./pages/admin/AdminReviewListPage";
 import AdminArticleFormPage from "./pages/admin/AdminArticleFormPage";
-
 function App() {
   return (
     <Layout>
@@ -42,17 +40,17 @@ function App() {
         <Route
           path="/admin/reviews"
           element={
-            <AdminRoute>
+            <ProtectedRoute requireAdmin>
               <AdminReviewListPage />
-            </AdminRoute>
+            </ProtectedRoute>
           }
         />
         <Route
           path="/admin/articles/:id"
           element={
-            <AdminRoute>
+            <ProtectedRoute requireAdmin>
               <AdminArticleFormPage />
-            </AdminRoute>
+            </ProtectedRoute>
           }
         />
       </Routes>

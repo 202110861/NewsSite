@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ApiError, api, type SubscriptionPlan } from '../lib/api'
+import { api, type SubscriptionPlan } from '../lib/api'
+import { getApiErrorMessage } from '../lib/errors'
 import PhoneBillingModal from '../components/PhoneBillingModal'
 
 export default function SupportPage() {
@@ -45,7 +46,7 @@ export default function SupportPage() {
       setPaymentId(result.paymentId)
       setModalOpen(true)
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : '결제 요청에 실패했습니다.')
+      setError(getApiErrorMessage(err, '결제 요청에 실패했습니다.'))
     }
   }
 

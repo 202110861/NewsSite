@@ -1,13 +1,17 @@
 const API_BASE = import.meta.env.VITE_API_URL ?? "/api";
 
 let accessToken: string | null = null;
-let refreshPromise: Promise<string | null> | null = null;
+let refreshPromise: Promise<{ accessToken: string; user: AuthUser } | null> | null =
+  null;
 
 export function setAccessToken(token: string | null) {
   accessToken = token;
 }
 
-async function refreshAccessToken(): Promise<string | null> {
+async function refreshSessionData(): Promise<{
+  accessToken: string;
+  user: AuthUser;
+} | null> {
   if (!refreshPromise) {
     refreshPromise = (async () => {
       try {
@@ -16,9 +20,12 @@ async function refreshAccessToken(): Promise<string | null> {
           credentials: "include",
         });
         if (!res.ok) return null;
-        const data = (await res.json()) as { accessToken: string };
+        const data = (await res.json()) as {
+          accessToken: string;
+          user: AuthUser;
+        };
         accessToken = data.accessToken;
-        return data.accessToken;
+        return data;
       } catch {
         return null;
       } finally {
@@ -27,6 +34,20 @@ async function refreshAccessToken(): Promise<string | null> {
     })();
   }
   return refreshPromise;
+}
+
+export async function refreshSession(): Promise<AuthUser | null> {
+  const data = await refreshSessionData();
+  if (!data) {
+    setAccessToken(null);
+    return null;
+  }
+  return data.user;
+}
+
+async function refreshAccessToken(): Promise<string | null> {
+  const data = await refreshSessionData();
+  return data?.accessToken ?? null;
 }
 
 export class ApiError extends Error {
