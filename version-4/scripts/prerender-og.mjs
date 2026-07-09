@@ -15,7 +15,7 @@ const IMAGE_EXTENSIONS = new Set([
 ])
 
 function escapeHtml(value) {
-  return value
+  return String(value)
     .replaceAll('&', '&amp;')
     .replaceAll('"', '&quot;')
     .replaceAll('<', '&lt;')
@@ -29,6 +29,15 @@ function resolveSiteUrl() {
     'https://newsin.kr'
 
   return raw.replace(/\/$/, '')
+}
+
+function resolveApiBase() {
+  const raw = process.env.VITE_API_URL || 'http://localhost:4000/api'
+  return raw.replace(/\/$/, '')
+}
+
+function resolveApiOrigin(apiBase) {
+  return apiBase.replace(/\/api\/?$/, '')
 }
 
 function filenameFromSrc(src) {
@@ -46,7 +55,6 @@ function buildAssetMap(outDir) {
     const ext = file.split('.').pop()?.toLowerCase()
     if (!ext || !IMAGE_EXTENSIONS.has(ext)) continue
 
-    // pg1-Cva78-BF.jpg → pg1.jpg / image_a16a17-CBIGLGia.png → image_a16a17.png
     const dashIndex = file.indexOf('-')
     if (dashIndex === -1) continue
 
@@ -57,10 +65,14 @@ function buildAssetMap(outDir) {
   return map
 }
 
-function resolveOgImageUrl(siteUrl, image, assetMap, fallback) {
+function resolveOgImageUrl(siteUrl, image, assetMap, fallback, apiOrigin) {
   const candidate = image || fallback
-  if (!candidate) return `${siteUrl}/og-default.jpg`
+  if (!candidate) return `${siteUrl}/logo.png`
   if (/^https?:\/\//i.test(candidate)) return candidate
+
+  if (candidate.startsWith('/uploads/')) {
+    return `${apiOrigin}${candidate}`
+  }
 
   const filename = filenameFromSrc(candidate)
   const bundled = assetMap.get(filename)
@@ -109,11 +121,54 @@ function writeOgPage(outDir, segments, html) {
   fs.writeFileSync(path.join(pageDir, 'index.html'), html)
 }
 
-async function main() {
-  const { articlesById, heroArticles, allArticlesSorted } = await import(
-    '../src/data/articles.ts'
+async function fetchJson(url) {
+  const res = await fetch(url)
+  if (!res.ok) {
+    throw new Error(`API 요청 실패 (${res.status}): ${url}`)
+  }
+  return res.json()
+}
+
+async function fetchArticles(apiBase) {
+  return fetchJson(`${apiBase}/articles?limit=5000`)
+}
+
+async function fetchSections(apiBase) {
+  return fetchJson(`${apiBase}/sections`)
+}
+
+function loadEnvFile() {
+  const envPath = path.resolve(
+    path.dirname(fileURLToPath(import.meta.url)),
+    '../.env',
   )
-  const { sections } = await import('../src/data/sections.ts')
+  if (!fs.existsSync(envPath)) return
+
+  for (const line of fs.readFileSync(envPath, 'utf8').split('\n')) {
+    const trimmed = line.trim()
+    if (!trimmed || trimmed.startsWith('#')) continue
+
+    const eq = trimmed.indexOf('=')
+    if (eq === -1) continue
+
+    const key = trimmed.slice(0, eq).trim()
+    const value = trimmed.slice(eq + 1).trim()
+    if (!(key in process.env)) process.env[key] = value
+  }
+}
+
+async function main() {
+  loadEnvFile()
+
+  const apiBase = resolveApiBase()
+  const apiOrigin = resolveApiOrigin(apiBase)
+
+  console.log(`[prerender-og] API: ${apiBase}`)
+
+  const [articles, sections] = await Promise.all([
+    fetchArticles(apiBase),
+    fetchSections(apiBase),
+  ])
 
   const outDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../dist')
   const indexPath = path.join(outDir, 'index.html')
@@ -125,10 +180,13 @@ async function main() {
   const baseHtml = fs.readFileSync(indexPath, 'utf-8')
   const siteUrl = resolveSiteUrl()
   const assetMap = buildAssetMap(outDir)
+  const heroImage = articles.find((article) => article.image)?.image
   const defaultImage = resolveOgImageUrl(
     siteUrl,
-    heroArticles[0]?.image,
+    heroImage,
     assetMap,
+    null,
+    apiOrigin,
   )
 
   fs.writeFileSync(
@@ -142,11 +200,8 @@ async function main() {
     }),
   )
 
-  for (const article of Object.values(articlesById)) {
-    const description =
-      article.excerpt?.trim() ||
-      article.subtitle?.trim() ||
-      article.title
+  for (const article of articles) {
+    const description = article.excerpt?.trim() || article.title
 
     writeOgPage(
       outDir,
@@ -155,15 +210,21 @@ async function main() {
         title: `${article.title} - ${SITE_NAME}`,
         description,
         url: `${siteUrl}/article/${article.id}`,
-        image: resolveOgImageUrl(siteUrl, article.image, assetMap, defaultImage),
+        image: resolveOgImageUrl(
+          siteUrl,
+          article.image,
+          assetMap,
+          defaultImage,
+          apiOrigin,
+        ),
         type: 'article',
       }),
     )
   }
 
   for (const section of sections) {
-    const articles = allArticlesSorted.filter((a) => a.section === section.id)
-    const lead = articles.find((a) => a.image) ?? articles[0]
+    const sectionArticles = articles.filter((a) => a.section === section.id)
+    const lead = sectionArticles.find((a) => a.image) ?? sectionArticles[0]
 
     writeOgPage(
       outDir,
@@ -173,7 +234,13 @@ async function main() {
         description: `${section.label} 섹션 최신 뉴스를 확인하세요.`,
         url: `${siteUrl}/section/${section.id}`,
         image: lead
-          ? resolveOgImageUrl(siteUrl, lead.image, assetMap, defaultImage)
+          ? resolveOgImageUrl(
+              siteUrl,
+              lead.image,
+              assetMap,
+              defaultImage,
+              apiOrigin,
+            )
           : defaultImage,
         type: 'website',
       }),
@@ -181,11 +248,11 @@ async function main() {
   }
 
   console.log(
-    `[prerender-og] ${Object.keys(articlesById).length} articles + ${sections.length} sections + home (site: ${siteUrl})`,
+    `[prerender-og] ${articles.length} articles + ${sections.length} sections + home (site: ${siteUrl})`,
   )
 }
 
 main().catch((error) => {
-  console.error(error)
+  console.error('[prerender-og]', error.message)
   process.exit(1)
 })
