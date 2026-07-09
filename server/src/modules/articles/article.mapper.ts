@@ -174,14 +174,7 @@ export function buildArticleCreateData(
     sourceUrl: input.sourceUrl,
     publishedAt: status === "PUBLISHED" ? new Date() : undefined,
     bodyBlocks: {
-      create: (input.blocks ?? []).map((block, index) => ({
-        type: block.type,
-        sortOrder: index,
-        text: block.type === "TEXT" ? (block.text ?? "") : null,
-        mediaUrl: block.type !== "TEXT" ? (block.mediaUrl ?? null) : null,
-        filePath: block.type !== "TEXT" ? (block.filePath ?? null) : null,
-        caption: block.caption ?? null,
-      })),
+      create: buildBlocksCreateData(input.blocks ?? []),
     },
   };
 }
