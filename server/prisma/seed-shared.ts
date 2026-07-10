@@ -1,4 +1,4 @@
-import { copyFileSync, existsSync, mkdirSync, readdirSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { PrismaClient } from "@prisma/client";
@@ -6,10 +6,6 @@ import { hashPassword } from "../src/utils/password.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export const uploadsImagesDir = path.resolve(__dirname, "../uploads/images");
-export const frontendImagesDir = path.resolve(
-  __dirname,
-  "../../version-4/src/images",
-);
 
 export const sections = [
   { id: "politics", label: "정치" },
@@ -47,28 +43,22 @@ export async function seedAdminUser(prisma: PrismaClient) {
   });
 }
 
-export async function importFrontendImages(
+/** uploads/images에 이미 있는 파일을 MediaAsset으로 등록 */
+export async function registerUploadImages(
   prisma: PrismaClient,
 ): Promise<Record<string, string>> {
   mkdirSync(uploadsImagesDir, { recursive: true });
-  const imported: Record<string, string> = {};
+  const registered: Record<string, string> = {};
 
-  if (!existsSync(frontendImagesDir)) {
-    console.warn(
-      "프론트 이미지 폴더를 찾지 못했습니다. 샘플 기사 이미지는 건너뜁니다.",
-    );
-    return imported;
+  if (!existsSync(uploadsImagesDir)) {
+    return registered;
   }
 
-  const files = readdirSync(frontendImagesDir).filter((name) =>
+  const files = readdirSync(uploadsImagesDir).filter((name) =>
     /\.(jpg|jpeg|png|gif|webp)$/i.test(name),
   );
 
   for (const originalName of files) {
-    const sourcePath = path.join(frontendImagesDir, originalName);
-    const destPath = path.join(uploadsImagesDir, originalName);
-    copyFileSync(sourcePath, destPath);
-
     const filePath = `images/${originalName}`;
     const url = `/uploads/${filePath}`;
 
@@ -91,8 +81,8 @@ export async function importFrontendImages(
       },
     });
 
-    imported[originalName] = filePath;
+    registered[originalName] = filePath;
   }
 
-  return imported;
+  return registered;
 }

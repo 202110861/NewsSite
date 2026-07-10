@@ -1,9 +1,5 @@
 import { PrismaClient } from '@prisma/client'
-import {
-  importFrontendImages,
-  seedAdminUser,
-  seedSections,
-} from './seed-shared.js'
+import { seedAdminUser, seedSections } from './seed-shared.js'
 
 const prisma = new PrismaClient()
 
@@ -69,8 +65,6 @@ async function main() {
       })
     }
   }
-
-  await importFrontendImages(prisma)
 
   console.log('Seed completed. 기사 데이터는 npm run db:import-mockdata 로 넣으세요.')
 }

@@ -6,7 +6,7 @@ import {
 } from "../src/modules/articles/article.mapper.js";
 import { articlesById } from "./mockdata.js";
 import {
-  importFrontendImages,
+  registerUploadImages,
   seedAdminUser,
   seedSections,
 } from "./seed-shared.js";
@@ -115,7 +115,7 @@ async function main() {
   console.log(`mockdata 기사 ${articles.length}건 변환 시작...`);
 
   await seedBase();
-  const localImages = await importFrontendImages(prisma);
+  const localImages = await registerUploadImages(prisma);
 
   const deleted = await prisma.article.deleteMany();
   console.log(`기존 기사 ${deleted.count}건 삭제`);
