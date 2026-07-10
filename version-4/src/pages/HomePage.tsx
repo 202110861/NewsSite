@@ -88,18 +88,18 @@ export default function HomePage() {
   }
 
   return (
-    <div className="mx-auto flex justify-center gap-4">
+    <div className="mx-auto flex w-full min-w-0 justify-center gap-4 overflow-x-hidden">
       <div className="min-w-0 flex-1">
         <HotIssueTicker />
 
-        <div className="flex gap-4 justify-center">
+        <div className="flex min-w-0 justify-center gap-4">
           <aside className="hidden w-40 shrink-0 lg:block sm:my-6">
             <div className="sticky top-4">
               {/* <AdSlot slotKey="home_side_left" className="min-h-[480px]" /> */}
             </div>
           </aside>
 
-          <div>
+          <div className="min-w-0 w-full max-w-full">
             <HeroHeadlines articles={heroArticles} />
             <NewsCarousel
               title="사회"
