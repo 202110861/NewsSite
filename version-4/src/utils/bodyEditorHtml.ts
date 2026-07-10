@@ -60,6 +60,11 @@ function extractTextFromElement(el: HTMLElement): string {
     .replace(/&quot;/g, '"');
 }
 
+/** <p><br></p> 같은 빈 문단은 병합 시 줄바꿈 마커로 취급 */
+function normalizeParagraphText(text: string): string {
+  return text.trim() === "" ? "" : text;
+}
+
 function pushFigureBlock(blocks: BodyBlockInput[], figure: HTMLElement) {
   const type = figure.dataset.blockType as "IMAGE" | "VIDEO";
   blocks.push({
@@ -90,8 +95,10 @@ function processChildNode(node: Node, blocks: BodyBlockInput[]) {
       return;
     }
 
-    const text = extractTextFromElement(node);
-    if (text.trim()) blocks.push({ type: "TEXT", text });
+    blocks.push({
+      type: "TEXT",
+      text: normalizeParagraphText(extractTextFromElement(node)),
+    });
   }
 }
 
@@ -101,7 +108,7 @@ function mergeAdjacentTextBlocks(blocks: BodyBlockInput[]): BodyBlockInput[] {
   for (const block of blocks) {
     const prev = merged[merged.length - 1];
     if (block.type === "TEXT" && prev?.type === "TEXT") {
-      prev.text = `${prev.text ?? ""}${block.text ?? ""}`;
+      prev.text = `${prev.text ?? ""}\n${block.text ?? ""}`;
       continue;
     }
     merged.push({ ...block });
@@ -114,7 +121,18 @@ export function htmlToBlocks(container: HTMLElement): BodyBlockInput[] {
   const blocks: BodyBlockInput[] = [];
   container.childNodes.forEach((node) => processChildNode(node, blocks));
   const merged = mergeAdjacentTextBlocks(blocks);
-  return merged.length > 0 ? merged : [{ type: "TEXT", text: "" }];
+
+  if (merged.length === 0) return [{ type: "TEXT", text: "" }];
+
+  if (
+    merged.length === 1 &&
+    merged[0].type === "TEXT" &&
+    (merged[0].text ?? "").trim() === ""
+  ) {
+    return [{ type: "TEXT", text: "" }];
+  }
+
+  return merged;
 }
 
 export function saveEditorSelection(editor: HTMLElement): Range | null {
