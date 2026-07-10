@@ -74,6 +74,10 @@ function resolveOgImageUrl(siteUrl, image, assetMap, fallback, apiOrigin) {
     return `${apiOrigin}${candidate}`
   }
 
+  if (/^images\//.test(candidate)) {
+    return `${apiOrigin}/uploads/${candidate}`
+  }
+
   const filename = filenameFromSrc(candidate)
   const bundled = assetMap.get(filename)
   if (bundled) return `${siteUrl}${bundled}`

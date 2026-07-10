@@ -12,6 +12,10 @@ import {
   type CreateArticleInput,
 } from "../articles/article.mapper.js";
 import {
+  publishArticlePage,
+  unpublishArticlePage,
+} from "../../services/articlePagePublisher.js";
+import {
   adminCreateArticleSchema,
   adminUpdateArticleSchema,
   bulkDeleteSchema,
@@ -25,6 +29,19 @@ export {
   bulkDeleteSchema,
   rejectSchema,
 };
+
+async function syncPublishedArticlePage(
+  article: Prisma.ArticleGetPayload<{ include: typeof articleInclude }>,
+): Promise<void> {
+  try {
+    await publishArticlePage(toFrontendArticle(article));
+  } catch (err) {
+    console.error(
+      `[articlePagePublisher] article ${article.id} S3 동기화 실패:`,
+      err,
+    );
+  }
+}
 
 function toAdminArticle(
   article: Prisma.ArticleGetPayload<{ include: typeof articleInclude }>,
@@ -107,7 +124,17 @@ export async function updateAdminArticle(
     });
   });
 
-  return getAdminArticle(id);
+  const updated = await prisma.article.findUnique({
+    where: { id },
+    include: articleInclude,
+  });
+  if (!updated) throw new AppError(404, "기사를 찾을 수 없습니다.");
+
+  if (updated.status === "PUBLISHED") {
+    await syncPublishedArticlePage(updated);
+  }
+
+  return toAdminArticle(updated);
 }
 
 export async function approveArticle(id: string) {
@@ -120,6 +147,8 @@ export async function approveArticle(id: string) {
     },
     include: articleInclude,
   });
+
+  await syncPublishedArticlePage(article);
   return toFrontendArticle(article);
 }
 
@@ -134,10 +163,30 @@ export async function rejectArticle(id: string, reason: string) {
 
 export async function deleteArticle(id: string) {
   await prisma.article.delete({ where: { id } });
+  try {
+    await unpublishArticlePage(id);
+  } catch (err) {
+    console.error(
+      `[articlePagePublisher] article ${id} S3 삭제 실패:`,
+      err,
+    );
+  }
 }
 
 export async function bulkDeleteArticles(ids: string[]) {
   await prisma.article.deleteMany({ where: { id: { in: ids } } });
+  await Promise.all(
+    ids.map(async (id) => {
+      try {
+        await unpublishArticlePage(id);
+      } catch (err) {
+        console.error(
+          `[articlePagePublisher] article ${id} S3 삭제 실패:`,
+          err,
+        );
+      }
+    }),
+  );
 }
 
 export async function getDashboardStats() {
