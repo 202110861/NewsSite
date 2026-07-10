@@ -3,11 +3,9 @@ import HotIssueTicker from "../components/HotIssueTicker";
 import HeroHeadlines from "../components/HeroHeadlines";
 import NewsCarousel from "../components/NewsCarousel";
 import SectionNewsGrid from "../components/SectionNewsGrid";
-import { fetchArticles, pickArticlesByIds } from "../lib/articles";
+import { fetchArticles } from "../lib/articles";
 import type { Article } from "../types/news";
 
-const HERO_IDS = ["43", "6", "1", "27"];
-const PHOTO_IDS = ["31", "32", "33", "34", "35", "36", "37", "38", "39", "40"];
 const GRID_SECTIONS = [
   "politics",
   "economy",
@@ -22,11 +20,10 @@ export default function HomePage() {
   const [heroArticles, setHeroArticles] = useState<Article[]>([]);
   const [videoArticles, setVideoArticles] = useState<Article[]>([]);
   const [politicsArticles, setPoliticsArticles] = useState<Article[]>([]);
-  const [cultureArticles, setCultureArticles] = useState<Article[]>([]);
+  const [societyArticles, setSocietyArticles] = useState<Article[]>([]);
   const [entertainmentArticles, setEntertainmentArticles] = useState<Article[]>(
     [],
   );
-  const [photoArticles, setPhotoArticles] = useState<Article[]>([]);
   const [eventArticles, setEventArticles] = useState<Article[]>([]);
   const [allSectionArticles, setAllSectionArticles] = useState<
     Record<string, Article[]>
@@ -41,16 +38,16 @@ export default function HomePage() {
           recent,
           video,
           politics,
-          culture,
+          society,
           entertainment,
           event,
           ...gridResults
         ] = await Promise.all([
-          fetchArticles({ limit: 50 }),
+          fetchArticles({ limit: 5 }),
           fetchArticles({ sectionId: "video", limit: 5 }),
-          fetchArticles({ sectionId: "politics", limit: 11 }),
-          fetchArticles({ sectionId: "culture", limit: 5 }),
-          fetchArticles({ sectionId: "entertainment", limit: 7 }),
+          fetchArticles({ sectionId: "politics", limit: 6 }),
+          fetchArticles({ sectionId: "society", limit: 5 }),
+          fetchArticles({ sectionId: "entertainment", limit: 6 }),
           fetchArticles({ sectionId: "event", limit: 5 }),
           ...GRID_SECTIONS.map((sectionId) =>
             fetchArticles({ sectionId, limit: 4 }),
@@ -59,13 +56,12 @@ export default function HomePage() {
 
         if (cancelled) return;
 
-        setHeroArticles(pickArticlesByIds(recent, HERO_IDS));
+        setHeroArticles(recent);
         setVideoArticles(video);
         setPoliticsArticles(politics);
-        setCultureArticles(culture);
+        setSocietyArticles(society);
         setEntertainmentArticles(entertainment);
         setEventArticles(event);
-        setPhotoArticles(pickArticlesByIds(recent, PHOTO_IDS));
 
         const gridData: Record<string, Article[]> = {};
         GRID_SECTIONS.forEach((sectionId, index) => {
@@ -106,9 +102,9 @@ export default function HomePage() {
           <div>
             <HeroHeadlines articles={heroArticles} />
             <NewsCarousel
-              title="영상뉴스"
-              articles={videoArticles}
-              moreHref="/section/video"
+              title="사회"
+              articles={societyArticles}
+              moreHref="/section/society"
             />
             <NewsCarousel
               title="정치"
@@ -116,16 +112,15 @@ export default function HomePage() {
               moreHref="/section/politics"
             />
             <NewsCarousel
-              title="문화/전시"
-              articles={cultureArticles}
-              moreHref="/section/culture"
-            />
-            <NewsCarousel
               title="연예/스포츠"
               articles={entertainmentArticles}
               moreHref="/section/entertainment"
             />
-            <NewsCarousel title="포토뉴스" articles={photoArticles} />
+            <NewsCarousel
+              title="영상뉴스"
+              articles={videoArticles}
+              moreHref="/section/video"
+            />
             <NewsCarousel
               title="이벤트/행사"
               articles={eventArticles}
