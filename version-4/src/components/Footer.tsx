@@ -7,13 +7,16 @@ export default function Footer() {
             <div className="">
               <img src="/logo(white).png" alt="logo" className="w-35 " />
             </div>
-            <p className="mt-3 max-w-2xl text-sm leading-relaxed text-paper-200/70">
-              경제인뉴스 : 경기 김포시 통진읍 애기봉로 681번길 87-29 ㅣ 대표전화
-              : 02-1800-3747 ㅣ
-              <br />
-              사업자번호 : 204-86-50557 ㅣ 등록번호 : 경기,아52459 ㅣ 등록일자 :
-              2020.01.17 ㅣ 발행일자 : 2020.01.17 ㅣ
-              <br /> 발행인 : 신홍태 ㅣ 편집인 : 신홍태 | {""}
+            <p className="mt-3 flex max-w-2xl flex-wrap gap-y-1 text-sm leading-relaxed text-paper-200/70 [&>span]:shrink-0">
+              <span>
+                경제인뉴스 : 경기 김포시 통진읍 애기봉로 681번길 87-29 ㅣ
+              </span>
+              <span>대표전화 : 02-1800-3747 ㅣ</span>
+              <span>사업자번호 : 204-86-50557 ㅣ</span>
+              <span>등록번호 : 경기,아52459 ㅣ</span>
+              <span>등록일자 : 2020.01.17 ㅣ</span>
+              <span>발행일자 : 2020.01.17 ㅣ</span>
+              <span>발행인 : 신홍태 ㅣ 편집인 : 신홍태 | </span>
               <span className="cursor-pointer">
                 청소년보호정책(책임자 : 신홍태)
               </span>

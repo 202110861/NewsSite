@@ -16,37 +16,39 @@ export default function NewsCarousel({ title, articles, moreHref }: Props) {
   function scrollBy(dir: 1 | -1) {
     const el = scrollerRef.current;
     if (!el) return;
-    el.scrollBy({ left: dir * el.clientWidth * 0.85, behavior: "smooth" });
+    const card = el.querySelector<HTMLElement>(":scope > a");
+    const step = card ? card.offsetWidth + 12 : el.clientWidth * 0.85;
+    el.scrollBy({ left: dir * step, behavior: "smooth" });
   }
 
   if (articles.length === 0) return null;
 
   return (
-    <section className="mx-auto max-w-6xl px-4 py-7 sm:px-6">
-      <div className="mb-4 flex items-baseline justify-between border-b-2 border-ink-900 pb-2.5">
+    <section className="mx-auto w-full min-w-0 max-w-6xl py-7">
+      <div className="mb-4 flex items-baseline justify-between border-b-2 border-ink-900 px-4 pb-2.5 sm:px-6">
         <h2 className="font-display text-lg font-black tracking-tight text-ink-900 sm:text-xl">
           {title}
         </h2>
         {moreHref && (
           <Link
             to={moreHref}
-            className="text-xs font-semibold text-ink-500 hover:text-flash-600"
+            className="shrink-0 text-xs font-semibold text-ink-500 hover:text-flash-600"
           >
             더보기 →
           </Link>
         )}
       </div>
 
-      <div className="relative">
+      <div className="relative min-w-0">
         <div
           ref={scrollerRef}
-          className="flex gap-4 overflow-x-auto scroll-smooth scrollbar-hide"
+          className="flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-smooth scrollbar-hide px-4 sm:gap-4 sm:px-6"
         >
           {articles.map((a) => (
             <Link
               key={a.id}
               to={`/article/${a.id}`}
-              className="group w-44 shrink-0 sm:w-56"
+              className="group w-[82%] shrink-0 snap-start sm:w-[calc(50%-0.5rem)] md:w-[calc(33.333%-0.75rem)] lg:w-56"
             >
               <div className="relative overflow-hidden rounded-md bg-ink-100">
                 <img
@@ -73,7 +75,6 @@ export default function NewsCarousel({ title, articles, moreHref }: Props) {
           ))}
         </div>
 
-        {/* 데스크탑 전용 스크롤 버튼 */}
         <button
           type="button"
           onClick={() => scrollBy(-1)}
