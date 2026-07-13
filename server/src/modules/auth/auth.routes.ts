@@ -2,6 +2,7 @@ import { Router } from 'express'
 import { env } from '../../config/env.js'
 import { authMiddleware, type AuthRequest } from '../../middlewares/auth.middleware.js'
 import * as authService from './auth.service.js'
+import * as engagementService from '../engagement/engagement.service.js'
 import { checkUsernameSchema, loginSchema, signupSchema } from './auth.validation.js'
 
 const REFRESH_COOKIE = 'refreshToken'
@@ -80,6 +81,24 @@ usersRouter.get('/me', authMiddleware, async (req: AuthRequest, res, next) => {
   try {
     const user = await authService.getMe(req.user!.id)
     res.json(user)
+  } catch (err) {
+    next(err)
+  }
+})
+
+usersRouter.get('/me/likes', authMiddleware, async (req: AuthRequest, res, next) => {
+  try {
+    const likes = await engagementService.listMyLikes(req.user!.id)
+    res.json(likes)
+  } catch (err) {
+    next(err)
+  }
+})
+
+usersRouter.get('/me/comments', authMiddleware, async (req: AuthRequest, res, next) => {
+  try {
+    const comments = await engagementService.listMyComments(req.user!.id)
+    res.json(comments)
   } catch (err) {
     next(err)
   }

@@ -46,6 +46,8 @@ model User {
   updatedAt     DateTime       @updatedAt
   refreshTokens RefreshToken[]
   subscriptions Subscription[]
+  likes         ArticleLike[]
+  comments      Comment[]
 }
 
 model RefreshToken {
@@ -79,6 +81,35 @@ model Article {
   updatedAt      DateTime           @updatedAt
   section        Section            @relation(fields: [sectionId], references: [id])
   bodyBlocks     ArticleBodyBlock[]
+  likes          ArticleLike[]
+  comments       Comment[]
+}
+
+model ArticleLike {
+  id        String   @id @default(uuid())
+  userId    String
+  articleId String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  article   Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, articleId])
+  @@index([articleId])
+  @@index([userId])
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  userId    String
+  articleId String
+  body      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  article   Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@index([articleId, createdAt])
+  @@index([userId])
 }
 
 model ArticleBodyBlock {
