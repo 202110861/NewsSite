@@ -9,6 +9,7 @@ import SignupPage from "./pages/SignupPage";
 import LoginPage from "./pages/LoginPage";
 import SupportPage from "./pages/SupportPage";
 import SupportCompletePage from "./pages/SupportCompletePage";
+import MyPage from "./pages/MyPage";
 import AdminReviewListPage from "./pages/admin/AdminReviewListPage";
 import AdminArticleFormPage from "./pages/admin/AdminArticleFormPage";
 function App() {
@@ -21,6 +22,14 @@ function App() {
         <Route path="/search" element={<SearchPage />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route
+          path="/mypage"
+          element={
+            <ProtectedRoute>
+              <MyPage />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/support"
           element={
