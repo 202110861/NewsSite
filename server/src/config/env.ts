@@ -1,5 +1,6 @@
 import { config } from 'dotenv'
 import { z } from 'zod'
+import { AppError } from '../middlewares/errorHandler.middleware.js'
 
 config()
 
@@ -15,6 +16,36 @@ const envSchema = z.object({
   CLOUDFRONT_DISTRIBUTION_ID: z.string().min(1).optional(),
   PORT: z.coerce.number().default(4000),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
+  NAVER_CLIENT_ID: z.string().optional(),
+  NAVER_CLIENT_SECRET: z.string().optional(),
+  NAVER_REDIRECT_URI: z.string().url().optional(),
+  GOOGLE_CLIENT_ID: z.string().optional(),
+  GOOGLE_CLIENT_SECRET: z.string().optional(),
+  GOOGLE_REDIRECT_URI: z.string().url().optional(),
 })
 
 export const env = envSchema.parse(process.env)
+
+export function requireNaverOAuth() {
+  const { NAVER_CLIENT_ID, NAVER_CLIENT_SECRET, NAVER_REDIRECT_URI } = env
+  if (!NAVER_CLIENT_ID || !NAVER_CLIENT_SECRET || !NAVER_REDIRECT_URI) {
+    throw new AppError(503, '네이버 로그인이 아직 설정되지 않았습니다.')
+  }
+  return {
+    clientId: NAVER_CLIENT_ID,
+    clientSecret: NAVER_CLIENT_SECRET,
+    redirectUri: NAVER_REDIRECT_URI,
+  }
+}
+
+export function requireGoogleOAuth() {
+  const { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI } = env
+  if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET || !GOOGLE_REDIRECT_URI) {
+    throw new AppError(503, '구글 로그인이 아직 설정되지 않았습니다.')
+  }
+  return {
+    clientId: GOOGLE_CLIENT_ID,
+    clientSecret: GOOGLE_CLIENT_SECRET,
+    redirectUri: GOOGLE_REDIRECT_URI,
+  }
+}
