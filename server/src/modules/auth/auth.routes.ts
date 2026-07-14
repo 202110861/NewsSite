@@ -1,11 +1,14 @@
 import { Router } from 'express'
 import { env } from '../../config/env.js'
+import { AppError } from '../../middlewares/errorHandler.middleware.js'
 import { authMiddleware, type AuthRequest } from '../../middlewares/auth.middleware.js'
 import * as authService from './auth.service.js'
+import * as oauthService from './oauth.service.js'
 import * as engagementService from '../engagement/engagement.service.js'
 import { checkUsernameSchema, loginSchema, signupSchema } from './auth.validation.js'
 
 const REFRESH_COOKIE = 'refreshToken'
+const OAUTH_STATE_COOKIE = oauthService.OAUTH_STATE_COOKIE
 
 function setRefreshCookie(res: import('express').Response, token: string) {
   res.cookie(REFRESH_COOKIE, token, {
@@ -15,6 +18,42 @@ function setRefreshCookie(res: import('express').Response, token: string) {
     maxAge: 14 * 24 * 60 * 60 * 1000,
     path: '/api/auth',
   })
+}
+
+function setOAuthStateCookie(res: import('express').Response, state: string) {
+  res.cookie(OAUTH_STATE_COOKIE, oauthService.hashState(state), {
+    httpOnly: true,
+    secure: env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: 10 * 60 * 1000,
+    path: '/api/auth',
+  })
+}
+
+function clearOAuthStateCookie(res: import('express').Response) {
+  res.clearCookie(OAUTH_STATE_COOKIE, { path: '/api/auth' })
+}
+
+function assertOAuthState(req: import('express').Request, state: string | undefined) {
+  const stored = req.cookies?.[OAUTH_STATE_COOKIE] as string | undefined
+  if (!state || !stored || stored !== oauthService.hashState(state)) {
+    throw new AppError(400, '유효하지 않은 OAuth state입니다.')
+  }
+}
+
+function redirectOAuthError(res: import('express').Response, message: string) {
+  const url = new URL('/login', env.CLIENT_URL)
+  url.searchParams.set('error', message)
+  res.redirect(url.toString())
+}
+
+function finishOAuthLogin(
+  res: import('express').Response,
+  result: { refreshToken: string },
+) {
+  clearOAuthStateCookie(res)
+  setRefreshCookie(res, result.refreshToken)
+  res.redirect(new URL('/auth/callback', env.CLIENT_URL).toString())
 }
 
 export const authRouter = Router()
@@ -72,6 +111,56 @@ authRouter.post('/logout', async (req, res, next) => {
     res.json({ message: '로그아웃되었습니다.' })
   } catch (err) {
     next(err)
+  }
+})
+
+authRouter.get('/naver', (_req, res, next) => {
+  try {
+    const state = oauthService.createOAuthState()
+    setOAuthStateCookie(res, state)
+    res.redirect(oauthService.getNaverAuthorizeUrl(state))
+  } catch (err) {
+    next(err)
+  }
+})
+
+authRouter.get('/naver/callback', async (req, res) => {
+  try {
+    const code = typeof req.query.code === 'string' ? req.query.code : undefined
+    const state = typeof req.query.state === 'string' ? req.query.state : undefined
+    if (!code) throw new AppError(400, '네이버 인증 코드가 없습니다.')
+    assertOAuthState(req, state)
+    const result = await oauthService.completeNaverLogin(code)
+    finishOAuthLogin(res, result)
+  } catch (err) {
+    const message =
+      err instanceof AppError ? err.message : '네이버 로그인에 실패했습니다.'
+    redirectOAuthError(res, message)
+  }
+})
+
+authRouter.get('/google', (_req, res, next) => {
+  try {
+    const state = oauthService.createOAuthState()
+    setOAuthStateCookie(res, state)
+    res.redirect(oauthService.getGoogleAuthorizeUrl(state))
+  } catch (err) {
+    next(err)
+  }
+})
+
+authRouter.get('/google/callback', async (req, res) => {
+  try {
+    const code = typeof req.query.code === 'string' ? req.query.code : undefined
+    const state = typeof req.query.state === 'string' ? req.query.state : undefined
+    if (!code) throw new AppError(400, '구글 인증 코드가 없습니다.')
+    assertOAuthState(req, state)
+    const result = await oauthService.completeGoogleLogin(code)
+    finishOAuthLogin(res, result)
+  } catch (err) {
+    const message =
+      err instanceof AppError ? err.message : '구글 로그인에 실패했습니다.'
+    redirectOAuthError(res, message)
   }
 })
 
