@@ -27,7 +27,7 @@ export async function signup(username: string, password: string) {
 
 export async function login(username: string, password: string) {
   const user = await prisma.user.findUnique({ where: { username } })
-  if (!user || !(await verifyPassword(password, user.passwordHash))) {
+  if (!user?.passwordHash || !(await verifyPassword(password, user.passwordHash))) {
     throw new AppError(401, '아이디 또는 비밀번호가 올바르지 않습니다.')
   }
 
