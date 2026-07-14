@@ -7,6 +7,7 @@ import SectionPage from "./pages/SectionPage";
 import SearchPage from "./pages/SearchPage";
 import SignupPage from "./pages/SignupPage";
 import LoginPage from "./pages/LoginPage";
+import AuthCallbackPage from "./pages/AuthCallbackPage";
 import SupportPage from "./pages/SupportPage";
 import SupportCompletePage from "./pages/SupportCompletePage";
 import MyPage from "./pages/MyPage";
@@ -22,6 +23,7 @@ function App() {
         <Route path="/search" element={<SearchPage />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/auth/callback" element={<AuthCallbackPage />} />
         <Route
           path="/mypage"
           element={
