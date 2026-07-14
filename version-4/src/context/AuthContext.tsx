@@ -14,7 +14,7 @@ interface AuthContextValue {
   loading: boolean;
   login: (username: string, password: string) => Promise<AuthUser>;
   logout: () => Promise<void>;
-  refreshUser: () => Promise<void>;
+  refreshUser: () => Promise<AuthUser | null>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -26,6 +26,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refreshUser = useCallback(async () => {
     const user = await refreshSession();
     setUser(user);
+    return user;
   }, []);
 
   useEffect(() => {

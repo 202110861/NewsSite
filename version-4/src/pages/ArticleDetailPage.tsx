@@ -1,6 +1,13 @@
-import { Link, Navigate, useParams } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
+import { useEffect, useState, type FormEvent } from "react";
 import { fetchArticle, fetchArticles } from "../lib/articles";
+import {
+  createComment,
+  fetchComments,
+  fetchLikeStatus,
+  toggleArticleLike,
+  type ArticleComment,
+} from "../lib/engagement";
 import { sectionMap, sections } from "../data/sections";
 import SectionTag from "../components/SectionTag";
 import NewsCarousel from "../components/NewsCarousel";
@@ -102,6 +109,7 @@ function getAdjacentArticles(all: Article[], current: Article) {
 
 export default function ArticleDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [article, setArticle] = useState<Article | null>(null);
   const [allArticles, setAllArticles] = useState<Article[]>([]);
@@ -115,6 +123,16 @@ export default function ArticleDetailPage() {
   const [saving, setSaving] = useState(false);
   const [editError, setEditError] = useState("");
 
+  const [isCommentOpen, setIsCommentOpen] = useState(false);
+  const [liked, setLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(0);
+  const [likeBusy, setLikeBusy] = useState(false);
+  const [comments, setComments] = useState<ArticleComment[]>([]);
+  const [commentBody, setCommentBody] = useState("");
+  const [commentSubmitting, setCommentSubmitting] = useState(false);
+  const [commentError, setCommentError] = useState("");
+  const [shareMessage, setShareMessage] = useState("");
+
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [id]);
@@ -126,12 +144,24 @@ export default function ArticleDetailPage() {
     setLoading(true);
     setNotFound(false);
     setIsEditing(false);
+    setIsCommentOpen(false);
+    setCommentBody("");
+    setCommentError("");
+    setShareMessage("");
 
-    Promise.all([fetchArticle(id), fetchArticles({ limit: 100 })])
-      .then(([detail, list]) => {
+    Promise.all([
+      fetchArticle(id),
+      fetchArticles({ limit: 100 }),
+      fetchLikeStatus(id).catch(() => ({ likeCount: 0, liked: false })),
+      fetchComments(id).catch(() => [] as ArticleComment[]),
+    ])
+      .then(([detail, list, likeStatus, commentList]) => {
         if (cancelled) return;
         setArticle(detail);
         setAllArticles(list);
+        setLikeCount(likeStatus.likeCount);
+        setLiked(likeStatus.liked);
+        setComments(commentList);
       })
       .catch(() => {
         if (!cancelled) setNotFound(true);
@@ -144,6 +174,89 @@ export default function ArticleDetailPage() {
       cancelled = true;
     };
   }, [id]);
+
+  useEffect(() => {
+    if (!id || !user) return;
+    let cancelled = false;
+    fetchLikeStatus(id)
+      .then((status) => {
+        if (cancelled) return;
+        setLikeCount(status.likeCount);
+        setLiked(status.liked);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [id, user]);
+
+  function requireLogin() {
+    if (!id) return;
+    navigate("/login", { state: { from: `/article/${id}` } });
+  }
+
+  async function handleLike() {
+    if (!id) return;
+    if (!user) {
+      requireLogin();
+      return;
+    }
+    if (likeBusy) return;
+    setLikeBusy(true);
+    try {
+      const status = await toggleArticleLike(id);
+      setLiked(status.liked);
+      setLikeCount(status.likeCount);
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 401) {
+        requireLogin();
+      }
+    } finally {
+      setLikeBusy(false);
+    }
+  }
+
+  function handleCommentToggle() {
+    setIsCommentOpen((open) => !open);
+    setCommentError("");
+  }
+
+  async function handleSubmitComment(e: FormEvent) {
+    e.preventDefault();
+    if (!id) return;
+    if (!user) {
+      requireLogin();
+      return;
+    }
+    const body = commentBody.trim();
+    if (!body) {
+      setCommentError("댓글 내용을 입력해 주세요.");
+      return;
+    }
+    setCommentSubmitting(true);
+    setCommentError("");
+    try {
+      const created = await createComment(id, body);
+      setComments((prev) => [...prev, created]);
+      setCommentBody("");
+    } catch (err) {
+      setCommentError(getApiErrorMessage(err, "댓글 등록에 실패했습니다."));
+    } finally {
+      setCommentSubmitting(false);
+    }
+  }
+
+  async function handleShare() {
+    const url = window.location.href;
+    try {
+      await navigator.clipboard.writeText(url);
+      setShareMessage("링크가 복사되었습니다");
+      window.setTimeout(() => setShareMessage(""), 2000);
+    } catch {
+      setShareMessage("복사에 실패했습니다");
+      window.setTimeout(() => setShareMessage(""), 2000);
+    }
+  }
 
   async function startEditing() {
     if (!article) return;
@@ -403,25 +516,113 @@ export default function ArticleDetailPage() {
           </div>
         )}
 
-        {/* {!isEditing && (
-          <div className="mt-8 flex flex-wrap items-center justify-between gap-3 rounded-lg bg-paper-100 px-4 py-3.5">
-            <p className="text-sm text-ink-700">
-              {article.reporter ? `${article.reporter} ` : ""}
-              <span className="text-ink-500">기사에 대한 의견을 남겨보세요.</span>
-            </p>
+        {!isEditing && (
+          <div className="mt-8 flex flex-col gap-4">
             <div className="flex gap-2">
-              {["공유", "스크랩", "인쇄"].map((label) => (
-                <button
-                  key={label}
-                  type="button"
-                  className="rounded-full border border-ink-900/15 px-3 py-1.5 text-xs font-semibold text-ink-700 hover:border-ink-900 hover:text-ink-900"
-                >
-                  {label}
-                </button>
-              ))}
+              <button
+                type="button"
+                onClick={() => void handleLike()}
+                disabled={likeBusy}
+                className={`rounded-full border px-3 py-1.5 text-xs font-semibold cursor-pointer disabled:opacity-50 ${
+                  liked
+                    ? "border-flash-600 bg-flash-600/10 text-flash-600"
+                    : "border-ink-900/15 text-ink-700 hover:border-ink-900 hover:text-ink-900"
+                }`}
+              >
+                좋아요
+                {likeCount >= 2 ? ` ${likeCount.toLocaleString("ko-KR")}` : ""}
+              </button>
+              <button
+                type="button"
+                onClick={handleCommentToggle}
+                className={`rounded-full border px-3 py-1.5 text-xs font-semibold cursor-pointer ${
+                  isCommentOpen
+                    ? "border-ink-900 text-ink-900"
+                    : "border-ink-900/15 text-ink-700 hover:border-ink-900 hover:text-ink-900"
+                }`}
+              >
+                댓글
+                {comments.length > 0
+                  ? ` ${comments.length.toLocaleString("ko-KR")}`
+                  : ""}
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleShare()}
+                className="rounded-full border border-ink-900/15 px-3 py-1.5 text-xs font-semibold text-ink-700 cursor-pointer hover:border-ink-900 hover:text-ink-900"
+              >
+                {shareMessage || "공유"}
+              </button>
             </div>
+
+            {isCommentOpen && (
+              <div className="flex flex-col gap-4 rounded-lg bg-paper-100 px-4 py-3.5">
+                <p className="text-sm text-ink-500">
+                  기사에 대한 의견을 남겨보세요.
+                </p>
+                <form
+                  onSubmit={(e) => void handleSubmitComment(e)}
+                  className="flex flex-col gap-2 sm:flex-row sm:items-start"
+                >
+                  <input
+                    type="text"
+                    value={commentBody}
+                    onChange={(e) => setCommentBody(e.target.value)}
+                    placeholder={
+                      user
+                        ? "댓글을 입력하세요"
+                        : "로그인 후 댓글을 작성할 수 있습니다"
+                    }
+                    maxLength={2000}
+                    disabled={!user || commentSubmitting}
+                    className="min-w-0 flex-1 rounded-md border border-ink-900/15 bg-white px-3 py-2 text-sm text-ink-800 outline-none placeholder:text-ink-400 focus:border-flash-600 disabled:bg-paper-50"
+                  />
+                  <button
+                    type="submit"
+                    disabled={!user || commentSubmitting || !commentBody.trim()}
+                    className="shrink-0 rounded-full bg-flash-600 px-4 py-2 text-xs font-semibold text-white hover:bg-flash-700 disabled:opacity-50"
+                  >
+                    {commentSubmitting ? "등록 중…" : "등록"}
+                  </button>
+                </form>
+                {commentError && (
+                  <p className="text-sm text-flash-600">{commentError}</p>
+                )}
+                {comments.length > 0 && (
+                  <ul className="flex flex-col gap-3 border-t border-ink-900/10 pt-3">
+                    {comments.map((comment) => (
+                      <li key={comment.id} className="text-sm">
+                        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                          <span className="font-semibold text-ink-800">
+                            {comment.user.username}
+                          </span>
+                          <time
+                            dateTime={comment.createdAt}
+                            className="text-xs text-ink-400"
+                          >
+                            {new Date(comment.createdAt).toLocaleString(
+                              "ko-KR",
+                              {
+                                year: "numeric",
+                                month: "2-digit",
+                                day: "2-digit",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              },
+                            )}
+                          </time>
+                        </div>
+                        <p className="mt-1 whitespace-pre-wrap text-ink-700">
+                          {comment.body}
+                        </p>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
           </div>
-        )} */}
+        )}
 
         {!isEditing && (
           <nav className="mt-8 divide-y divide-ink-900/10 border-y border-ink-900/10">

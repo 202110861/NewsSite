@@ -14,6 +14,14 @@ export default function MastheadBar() {
                 {user.username}님
               </span>
               <span className="text-ink-300">|</span>
+              {user.role === "USER" && (
+                <>
+                  <Link to="/mypage" className="hover:text-ink-900">
+                    마이페이지
+                  </Link>
+                  <span className="text-ink-300">|</span>
+                </>
+              )}
               {user.role === "ADMIN" && (
                 <>
                   <Link to="/admin/reviews" className="hover:text-ink-900">
