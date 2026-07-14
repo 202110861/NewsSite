@@ -12,6 +12,11 @@ enum UserRole {
   ADMIN
 }
 
+enum AuthProvider {
+  GOOGLE
+  NAVER
+}
+
 enum ArticleStatus {
   PENDING_REVIEW
   PUBLISHED
@@ -40,12 +45,27 @@ enum PaymentStatus {
 model User {
   id            String         @id @default(uuid())
   username      String         @unique
-  passwordHash  String
+  passwordHash  String?
   role          UserRole       @default(USER)
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   refreshTokens RefreshToken[]
+  oauthAccounts OAuthAccount[]
   subscriptions Subscription[]
+  likes         ArticleLike[]
+  comments      Comment[]
+}
+
+model OAuthAccount {
+  id             String       @id @default(uuid())
+  provider       AuthProvider
+  providerUserId String
+  userId         String
+  createdAt      DateTime     @default(now())
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerUserId])
+  @@index([userId])
 }
 
 model RefreshToken {
@@ -79,6 +99,35 @@ model Article {
   updatedAt      DateTime           @updatedAt
   section        Section            @relation(fields: [sectionId], references: [id])
   bodyBlocks     ArticleBodyBlock[]
+  likes          ArticleLike[]
+  comments       Comment[]
+}
+
+model ArticleLike {
+  id        String   @id @default(uuid())
+  userId    String
+  articleId String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  article   Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, articleId])
+  @@index([articleId])
+  @@index([userId])
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  userId    String
+  articleId String
+  body      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  article   Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@index([articleId, createdAt])
+  @@index([userId])
 }
 
 model ArticleBodyBlock {

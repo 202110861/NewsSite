@@ -16,7 +16,7 @@ export default function HeroHeadlines({ articles }: { articles: Article[] }) {
           to={`/article/${main.id}`}
           className="group relative block min-w-0 overflow-hidden rounded-lg bg-ink-950"
         >
-          <div className="relative aspect-[16/9] max-h-[52vw] w-full sm:max-h-[280px] lg:aspect-[16/10] lg:max-h-none">
+          <div className="relative aspect-[16/9] max-h-[52vw] w-full sm:max-h-[280px] lg:aspect-[16/12] lg:max-h-none">
             <img
               src={resolveMediaUrl(main.image ?? "")}
               alt=""
