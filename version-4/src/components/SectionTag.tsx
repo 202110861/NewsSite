@@ -8,7 +8,6 @@ const accentBg: Record<SectionId, string> = {
   culture: 'bg-section-culture',
   entertainment: 'bg-section-entertainment',
   local: 'bg-section-local',
-  event: 'bg-section-event',
   video: 'bg-section-video',
   cardNews: 'bg-section-cardNews',
   shorts: 'bg-section-shorts',

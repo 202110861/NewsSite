@@ -11,6 +11,8 @@ import {
 import { sectionMap, sections } from "../data/sections";
 import SectionTag from "../components/SectionTag";
 import NewsCarousel from "../components/NewsCarousel";
+import ArticleSocialLoginRail from "../components/ArticleSocialLoginRail";
+import ArticleSideNews from "../components/ArticleSideNews";
 import { ArticleDetailSkeleton } from "../components/skeleton";
 import ArticleAdminMenu from "../components/admin/ArticleAdminMenu";
 import ArticleInlineEditBody from "../components/admin/ArticleInlineEditBody";
@@ -344,6 +346,11 @@ export default function ArticleDetailPage() {
   const meta = sectionMap[isEditing ? editSectionId : article.section];
   const related = getRelatedArticles(allArticles, article);
   const { prev, next } = getAdjacentArticles(allArticles, article);
+  const others = allArticles.filter((a) => a.id !== article.id);
+  const latestNews = others.slice(0, 5);
+  const popularNews = [...others]
+    .sort((a, b) => (b.viewCount ?? 0) - (a.viewCount ?? 0))
+    .slice(0, 5);
   const pageUrl =
     import.meta.env.VITE_SITE_URL?.replace(/\/$/, "") ||
     (typeof window !== "undefined"
@@ -364,16 +371,17 @@ export default function ArticleDetailPage() {
         />
         <meta property="og:url" content={`${pageUrl}/article/${article.id}`} />
       </Helmet>
-      <article className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
-        <nav className="mb-5 flex items-center gap-1.5 text-xs text-ink-500">
-          <Link to="/" className="hover:text-flash-600">
-            홈
-          </Link>
-          <span>›</span>
-          <span>{meta?.label ?? "뉴스"}</span>
-        </nav>
 
+      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
         <header>
+          <nav className="mb-5 flex items-center gap-1.5 text-xs text-ink-500">
+            <Link to="/" className="hover:text-flash-600">
+              홈
+            </Link>
+            <span>›</span>
+            <span>{meta?.label ?? "뉴스"}</span>
+          </nav>
+
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
               {isEditing ? (
@@ -401,7 +409,7 @@ export default function ArticleDetailPage() {
                   className="mt-3 w-full border-0 bg-transparent p-0 text-2xl font-bold leading-snug text-ink-900 outline-none focus:ring-2 focus:ring-flash-600/20 sm:text-3xl"
                 />
               ) : (
-                <h1 className="mt-3 text-2xl font-bold leading-snug text-ink-900 sm:text-3xl">
+                <h1 className="mt-3 text-4xl font-bold leading-snug text-ink-900 sm:text-4xl">
                   {article.title}
                 </h1>
               )}
@@ -472,188 +480,205 @@ export default function ArticleDetailPage() {
           )}
         </header>
 
-        {!isEditing &&
-          article.videoUrl &&
-          youtubeEmbedUrl(article.videoUrl) && (
-            <figure className="mt-6">
-              <div className="aspect-video overflow-hidden rounded-lg bg-ink-100">
-                <iframe
-                  src={youtubeEmbedUrl(article.videoUrl)!}
-                  title={article.title}
-                  className="h-full w-full"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                />
-              </div>
-            </figure>
-          )}
+        <div className="mt-6 flex gap-6 xl:gap-8">
+          {!isEditing && !user && <ArticleSocialLoginRail />}
 
-        {isEditing ? (
-          <ArticleInlineEditBody blocks={editBlocks} onChange={setEditBlocks} />
-        ) : (
-          <div className="mt-7 flex flex-col gap-4">
-            {article.subtitle && (
-              <p className="text-lg font-bold">{article.subtitle}</p>
-            )}
-            {article.body && article.body.length > 0 ? (
-              <>
-                {article.body.map((block, i) => renderBodyBlock(block, i))}
-                {article.isAI && (
-                  <p className="text-sm text-ink-500">
-                    이 기사는 AI가 작성하였습니다.
-                  </p>
-                )}
-              </>
+          <article className="min-w-0 flex-1">
+            {!isEditing &&
+              article.videoUrl &&
+              youtubeEmbedUrl(article.videoUrl) && (
+                <figure>
+                  <div className="aspect-video overflow-hidden rounded-lg bg-ink-100">
+                    <iframe
+                      src={youtubeEmbedUrl(article.videoUrl)!}
+                      title={article.title}
+                      className="h-full w-full"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                  </div>
+                </figure>
+              )}
+
+            {isEditing ? (
+              <ArticleInlineEditBody
+                blocks={editBlocks}
+                onChange={setEditBlocks}
+              />
             ) : (
-              renderBodyBlock(
-                article.excerpt ?? "본문 내용이 준비 중입니다.",
-                0,
-              )
-            )}
-          </div>
-        )}
-
-        {!isEditing && (
-          <div className="mt-8 flex flex-col gap-4">
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => void handleLike()}
-                disabled={likeBusy}
-                className={`rounded-full border px-3 py-1.5 text-xs font-semibold cursor-pointer disabled:opacity-50 ${
-                  liked
-                    ? "border-flash-600 bg-flash-600/10 text-flash-600"
-                    : "border-ink-900/15 text-ink-700 hover:border-ink-900 hover:text-ink-900"
-                }`}
-              >
-                좋아요
-                {likeCount >= 2 ? ` ${likeCount.toLocaleString("ko-KR")}` : ""}
-              </button>
-              <button
-                type="button"
-                onClick={handleCommentToggle}
-                className={`rounded-full border px-3 py-1.5 text-xs font-semibold cursor-pointer ${
-                  isCommentOpen
-                    ? "border-ink-900 text-ink-900"
-                    : "border-ink-900/15 text-ink-700 hover:border-ink-900 hover:text-ink-900"
-                }`}
-              >
-                댓글
-                {comments.length > 0
-                  ? ` ${comments.length.toLocaleString("ko-KR")}`
-                  : ""}
-              </button>
-              <button
-                type="button"
-                onClick={() => void handleShare()}
-                className="rounded-full border border-ink-900/15 px-3 py-1.5 text-xs font-semibold text-ink-700 cursor-pointer hover:border-ink-900 hover:text-ink-900"
-              >
-                {shareMessage || "공유"}
-              </button>
-            </div>
-
-            {isCommentOpen && (
-              <div className="flex flex-col gap-4 rounded-lg bg-paper-100 px-4 py-3.5">
-                <p className="text-sm text-ink-500">
-                  기사에 대한 의견을 남겨보세요.
-                </p>
-                <form
-                  onSubmit={(e) => void handleSubmitComment(e)}
-                  className="flex flex-col gap-2 sm:flex-row sm:items-start"
-                >
-                  <input
-                    type="text"
-                    value={commentBody}
-                    onChange={(e) => setCommentBody(e.target.value)}
-                    placeholder={
-                      user
-                        ? "댓글을 입력하세요"
-                        : "로그인 후 댓글을 작성할 수 있습니다"
-                    }
-                    maxLength={2000}
-                    disabled={!user || commentSubmitting}
-                    className="min-w-0 flex-1 rounded-md border border-ink-900/15 bg-white px-3 py-2 text-sm text-ink-800 outline-none placeholder:text-ink-400 focus:border-flash-600 disabled:bg-paper-50"
-                  />
-                  <button
-                    type="submit"
-                    disabled={!user || commentSubmitting || !commentBody.trim()}
-                    className="shrink-0 rounded-full bg-flash-600 px-4 py-2 text-xs font-semibold text-white hover:bg-flash-700 disabled:opacity-50"
-                  >
-                    {commentSubmitting ? "등록 중…" : "등록"}
-                  </button>
-                </form>
-                {commentError && (
-                  <p className="text-sm text-flash-600">{commentError}</p>
+              <div className="flex flex-col gap-4">
+                {article.subtitle && (
+                  <p className="text-lg font-bold">{article.subtitle}</p>
                 )}
-                {comments.length > 0 && (
-                  <ul className="flex flex-col gap-3 border-t border-ink-900/10 pt-3">
-                    {comments.map((comment) => (
-                      <li key={comment.id} className="text-sm">
-                        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-                          <span className="font-semibold text-ink-800">
-                            {comment.user.username}
-                          </span>
-                          <time
-                            dateTime={comment.createdAt}
-                            className="text-xs text-ink-400"
-                          >
-                            {new Date(comment.createdAt).toLocaleString(
-                              "ko-KR",
-                              {
-                                year: "numeric",
-                                month: "2-digit",
-                                day: "2-digit",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              },
-                            )}
-                          </time>
-                        </div>
-                        <p className="mt-1 whitespace-pre-wrap text-ink-700">
-                          {comment.body}
-                        </p>
-                      </li>
-                    ))}
-                  </ul>
+                {article.body && article.body.length > 0 ? (
+                  <>
+                    {article.body.map((block, i) => renderBodyBlock(block, i))}
+                    {article.isAI && (
+                      <p className="text-sm text-ink-500">
+                        이 기사는 AI가 작성하였습니다.
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  renderBodyBlock(
+                    article.excerpt ?? "본문 내용이 준비 중입니다.",
+                    0,
+                  )
                 )}
               </div>
             )}
-          </div>
-        )}
 
-        {!isEditing && (
-          <nav className="mt-8 divide-y divide-ink-900/10 border-y border-ink-900/10">
-            {next && (
-              <Link
-                to={`/article/${next.id}`}
-                className="flex items-center gap-3 py-3.5 hover:bg-paper-100"
-              >
-                <span className="shrink-0 text-xs font-bold text-flash-600">
-                  다음기사
-                </span>
-                <span className="line-clamp-1 flex-1 text-sm text-ink-800">
-                  {next.title}
-                </span>
-                <span className="text-ink-300">›</span>
-              </Link>
+            {!isEditing && (
+              <div className="mt-8 flex flex-col gap-4">
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => void handleLike()}
+                    disabled={likeBusy}
+                    className={`cursor-pointer rounded-full border px-3 py-1.5 text-xs font-semibold disabled:opacity-50 ${
+                      liked
+                        ? "border-flash-600 bg-flash-600/10 text-flash-600"
+                        : "border-ink-900/15 text-ink-700 hover:border-ink-900 hover:text-ink-900"
+                    }`}
+                  >
+                    좋아요
+                    {likeCount >= 2
+                      ? ` ${likeCount.toLocaleString("ko-KR")}`
+                      : ""}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCommentToggle}
+                    className={`cursor-pointer rounded-full border px-3 py-1.5 text-xs font-semibold ${
+                      isCommentOpen
+                        ? "border-ink-900 text-ink-900"
+                        : "border-ink-900/15 text-ink-700 hover:border-ink-900 hover:text-ink-900"
+                    }`}
+                  >
+                    댓글
+                    {comments.length > 0
+                      ? ` ${comments.length.toLocaleString("ko-KR")}`
+                      : ""}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void handleShare()}
+                    className="cursor-pointer rounded-full border border-ink-900/15 px-3 py-1.5 text-xs font-semibold text-ink-700 hover:border-ink-900 hover:text-ink-900"
+                  >
+                    {shareMessage || "공유"}
+                  </button>
+                </div>
+
+                {isCommentOpen && (
+                  <div className="flex flex-col gap-4 rounded-lg bg-paper-100 px-4 py-3.5">
+                    <p className="text-sm text-ink-500">
+                      기사에 대한 의견을 남겨보세요.
+                    </p>
+                    <form
+                      onSubmit={(e) => void handleSubmitComment(e)}
+                      className="flex flex-col gap-2 sm:flex-row sm:items-start"
+                    >
+                      <input
+                        type="text"
+                        value={commentBody}
+                        onChange={(e) => setCommentBody(e.target.value)}
+                        placeholder={
+                          user
+                            ? "댓글을 입력하세요"
+                            : "로그인 후 댓글을 작성할 수 있습니다"
+                        }
+                        maxLength={2000}
+                        disabled={!user || commentSubmitting}
+                        className="min-w-0 flex-1 rounded-md border border-ink-900/15 bg-white px-3 py-2 text-sm text-ink-800 outline-none placeholder:text-ink-400 focus:border-flash-600 disabled:bg-paper-50"
+                      />
+                      <button
+                        type="submit"
+                        disabled={
+                          !user || commentSubmitting || !commentBody.trim()
+                        }
+                        className="shrink-0 rounded-full bg-flash-600 px-4 py-2 text-xs font-semibold text-white hover:bg-flash-700 disabled:opacity-50"
+                      >
+                        {commentSubmitting ? "등록 중…" : "등록"}
+                      </button>
+                    </form>
+                    {commentError && (
+                      <p className="text-sm text-flash-600">{commentError}</p>
+                    )}
+                    {comments.length > 0 && (
+                      <ul className="flex flex-col gap-3 border-t border-ink-900/10 pt-3">
+                        {comments.map((comment) => (
+                          <li key={comment.id} className="text-sm">
+                            <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                              <span className="font-semibold text-ink-800">
+                                {comment.user.username}
+                              </span>
+                              <time
+                                dateTime={comment.createdAt}
+                                className="text-xs text-ink-400"
+                              >
+                                {new Date(comment.createdAt).toLocaleString(
+                                  "ko-KR",
+                                  {
+                                    year: "numeric",
+                                    month: "2-digit",
+                                    day: "2-digit",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  },
+                                )}
+                              </time>
+                            </div>
+                            <p className="mt-1 whitespace-pre-wrap text-ink-700">
+                              {comment.body}
+                            </p>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                )}
+              </div>
             )}
-            {prev && (
-              <Link
-                to={`/article/${prev.id}`}
-                className="flex items-center gap-3 py-3.5 hover:bg-paper-100"
-              >
-                <span className="shrink-0 text-xs font-bold text-ink-500">
-                  이전기사
-                </span>
-                <span className="line-clamp-1 flex-1 text-sm text-ink-800">
-                  {prev.title}
-                </span>
-                <span className="text-ink-300">›</span>
-              </Link>
+
+            {!isEditing && (
+              <nav className="mt-8 divide-y divide-ink-900/10 border-y border-ink-900/10">
+                {next && (
+                  <Link
+                    to={`/article/${next.id}`}
+                    className="flex items-center gap-3 py-3.5 hover:bg-paper-100"
+                  >
+                    <span className="shrink-0 text-xs font-bold text-flash-600">
+                      다음기사
+                    </span>
+                    <span className="line-clamp-1 flex-1 text-sm text-ink-800">
+                      {next.title}
+                    </span>
+                    <span className="text-ink-300">›</span>
+                  </Link>
+                )}
+                {prev && (
+                  <Link
+                    to={`/article/${prev.id}`}
+                    className="flex items-center gap-3 py-3.5 hover:bg-paper-100"
+                  >
+                    <span className="shrink-0 text-xs font-bold text-ink-500">
+                      이전기사
+                    </span>
+                    <span className="line-clamp-1 flex-1 text-sm text-ink-800">
+                      {prev.title}
+                    </span>
+                    <span className="text-ink-300">›</span>
+                  </Link>
+                )}
+              </nav>
             )}
-          </nav>
-        )}
-      </article>
+          </article>
+
+          {!isEditing && (
+            <ArticleSideNews latest={latestNews} popular={popularNews} />
+          )}
+        </div>
+      </div>
 
       {!isEditing && related.length > 0 && (
         <NewsCarousel

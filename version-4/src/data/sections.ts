@@ -11,13 +11,16 @@ export const sections: Section[] = [
     accent: "bg-section-entertainment",
   },
   { id: "local", label: "지역뉴스", accent: "bg-section-local" },
-  { id: "event", label: "이벤트/행사", accent: "bg-section-event" },
   { id: "video", label: "영상뉴스", accent: "bg-section-video" },
   { id: "cardNews", label: "카드뉴스", accent: "bg-section-cardNews" },
-  { id: "shorts", label: "숏컷뉴스", accent: "bg-section-shorts" },
+  // { id: "shorts", label: "숏컷뉴스", accent: "bg-section-shorts" },
 ];
 
-export const sectionMap: Record<string, Section> = sections.reduce(
-  (acc, s) => ({ ...acc, [s.id]: s }),
-  {} as Record<string, Section>,
-);
+export const sectionMap: Record<string, Section> = {
+  ...sections.reduce(
+    (acc, s) => ({ ...acc, [s.id]: s }),
+    {} as Record<string, Section>,
+  ),
+  // 내비에서는 숨기지만, 기존 기사 태그 표시용으로 유지
+  shorts: { id: "shorts", label: "숏컷뉴스", accent: "bg-section-shorts" },
+};

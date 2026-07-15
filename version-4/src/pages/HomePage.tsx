@@ -13,7 +13,7 @@ const GRID_SECTIONS = [
   "culture",
   "entertainment",
   "local",
-  "event",
+  "society",
 ] as const;
 
 export default function HomePage() {
@@ -25,7 +25,6 @@ export default function HomePage() {
   const [entertainmentArticles, setEntertainmentArticles] = useState<Article[]>(
     [],
   );
-  const [eventArticles, setEventArticles] = useState<Article[]>([]);
   const [allSectionArticles, setAllSectionArticles] = useState<
     Record<string, Article[]>
   >({});
@@ -41,7 +40,6 @@ export default function HomePage() {
           politics,
           society,
           entertainment,
-          event,
           ...gridResults
         ] = await Promise.all([
           fetchArticles({ limit: 5 }),
@@ -49,7 +47,6 @@ export default function HomePage() {
           fetchArticles({ sectionId: "politics", limit: 6 }),
           fetchArticles({ sectionId: "society", limit: 5 }),
           fetchArticles({ sectionId: "entertainment", limit: 6 }),
-          fetchArticles({ sectionId: "event", limit: 5 }),
           ...GRID_SECTIONS.map((sectionId) =>
             fetchArticles({ sectionId, limit: 4 }),
           ),
@@ -62,7 +59,6 @@ export default function HomePage() {
         setPoliticsArticles(politics);
         setSocietyArticles(society);
         setEntertainmentArticles(entertainment);
-        setEventArticles(event);
 
         const gridData: Record<string, Article[]> = {};
         GRID_SECTIONS.forEach((sectionId, index) => {
@@ -87,7 +83,12 @@ export default function HomePage() {
   return (
     <div className="mx-auto flex w-full min-w-0 justify-center gap-4 overflow-x-hidden">
       <div className="min-w-0 flex-1">
-        <HotIssueTicker />
+        <HotIssueTicker
+          items={heroArticles.map((article) => ({
+            id: article.id,
+            title: article.title,
+          }))}
+        />
 
         <div className="flex min-w-0 justify-center gap-4">
           <aside className="hidden w-40 shrink-0 lg:block sm:my-6">
