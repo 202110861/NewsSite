@@ -89,6 +89,7 @@ model Article {
   sectionId      String
   status         ArticleStatus      @default(PENDING_REVIEW)
   isVideo        Boolean            @default(false)
+  isAI           Boolean            @default(false)
   excerpt        String?
   reporter       String             @default("발행인")
   viewCount      Int                @default(0)

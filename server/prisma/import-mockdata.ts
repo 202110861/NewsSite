@@ -22,6 +22,7 @@ interface MockArticle {
   section: string;
   image?: string;
   isVideo?: boolean;
+  isAI?: boolean;
   videoUrl?: string;
   publishedAt: string;
   excerpt?: string;
@@ -95,6 +96,7 @@ function convertArticle(
     sectionId: article.section,
     status: "PUBLISHED" as const,
     isVideo: flags.isVideo,
+    isAI: article.isAI ?? false,
     excerpt: article.excerpt ?? article.subtitle,
     reporter: article.reporter ?? "발행인",
     publishedAt: new Date(article.publishedAt),
