@@ -14,6 +14,7 @@ const articleBaseFields = {
   excerpt: z.string().optional(),
   reporter: z.string().optional(),
   sourceUrl: z.string().optional(),
+  isAI: z.boolean().optional(),
 };
 
 export const adminCreateArticleSchema = z.object({
@@ -27,6 +28,7 @@ export const adminUpdateArticleSchema = z.object({
   excerpt: z.string().optional(),
   reporter: z.string().optional(),
   sourceUrl: z.string().optional(),
+  isAI: z.boolean().optional(),
   blocks: z.array(bodyBlockSchema).optional(),
 });
 

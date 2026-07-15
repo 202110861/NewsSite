@@ -22,6 +22,7 @@ export function createAdminArticle(data: {
   sectionId: string;
   blocks: BodyBlockInput[];
   excerpt?: string;
+  isAI?: boolean;
 }) {
   return api.post<AdminArticle>("/admin/articles", data);
 }
@@ -33,6 +34,7 @@ export function updateAdminArticle(
     sectionId?: string;
     blocks?: BodyBlockInput[];
     excerpt?: string;
+    isAI?: boolean;
   },
 ) {
   return api.patch<AdminArticle>(`/admin/articles/${id}`, data);

@@ -10,6 +10,7 @@ import LoginPage from "./pages/LoginPage";
 import AuthCallbackPage from "./pages/AuthCallbackPage";
 import SupportPage from "./pages/SupportPage";
 import SupportCompletePage from "./pages/SupportCompletePage";
+import SupportPortOneReturnPage from "./pages/SupportPortOneReturnPage";
 import MyPage from "./pages/MyPage";
 import AdminReviewListPage from "./pages/admin/AdminReviewListPage";
 import AdminArticleFormPage from "./pages/admin/AdminArticleFormPage";
@@ -45,6 +46,14 @@ function App() {
           element={
             <ProtectedRoute>
               <SupportCompletePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/support/portone-return"
+          element={
+            <ProtectedRoute>
+              <SupportPortOneReturnPage />
             </ProtectedRoute>
           }
         />

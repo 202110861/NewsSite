@@ -61,6 +61,7 @@ export interface AdminArticle {
   status: "PENDING_REVIEW" | "PUBLISHED" | "REJECTED" | "ARCHIVED";
   excerpt?: string | null;
   reporter: string;
+  isAI?: boolean;
   createdAt: string;
   updatedAt: string;
   blocks: BodyBlockInput[];

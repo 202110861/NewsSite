@@ -9,7 +9,7 @@ export default function HeroHeadlines({ articles }: { articles: Article[] }) {
   if (!main) return null;
 
   return (
-    <section className="mx-auto w-full min-w-0 max-w-6xl px-4 pt-6 sm:px-6">
+    <section className="mx-auto w-full min-w-0 max-w-6xl pt-6 sm:px-6">
       <div className="grid min-w-0 gap-4 lg:grid-cols-[1.6fr_1fr] lg:gap-5">
         {/* 메인 헤드라인 */}
         <Link

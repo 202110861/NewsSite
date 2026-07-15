@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { fetchArticles } from "../lib/articles";
 import { sectionMap } from "../data/sections";
 import SectionTag from "../components/SectionTag";
+import { SectionPageSkeleton } from "../components/skeleton";
 import { resolveMediaUrl } from "../utils/media";
 import type { Article } from "../types/news";
 
@@ -44,11 +45,7 @@ export default function SectionPage() {
   }
 
   if (loading) {
-    return (
-      <div className="mx-auto max-w-6xl px-4 py-20 text-center text-sm text-ink-500">
-        기사를 불러오는 중…
-      </div>
-    );
+    return <SectionPageSkeleton label={meta.label} />;
   }
 
   return (

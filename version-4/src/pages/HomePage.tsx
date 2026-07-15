@@ -3,6 +3,7 @@ import HotIssueTicker from "../components/HotIssueTicker";
 import HeroHeadlines from "../components/HeroHeadlines";
 import NewsCarousel from "../components/NewsCarousel";
 import SectionNewsGrid from "../components/SectionNewsGrid";
+import { HomePageSkeleton } from "../components/skeleton";
 import { fetchArticles } from "../lib/articles";
 import type { Article } from "../types/news";
 
@@ -80,11 +81,7 @@ export default function HomePage() {
   }, []);
 
   if (loading) {
-    return (
-      <div className="mx-auto max-w-6xl px-4 py-20 text-center text-sm text-ink-500">
-        뉴스를 불러오는 중…
-      </div>
-    );
+    return <HomePageSkeleton />;
   }
 
   return (
@@ -102,11 +99,6 @@ export default function HomePage() {
           <div className="min-w-0 w-full max-w-full">
             <HeroHeadlines articles={heroArticles} />
             <NewsCarousel
-              title="사회"
-              articles={societyArticles}
-              moreHref="/section/society"
-            />
-            <NewsCarousel
               title="정치"
               articles={politicsArticles}
               moreHref="/section/politics"
@@ -122,11 +114,10 @@ export default function HomePage() {
               moreHref="/section/video"
             />
             <NewsCarousel
-              title="이벤트/행사"
-              articles={eventArticles}
-              moreHref="/section/event"
+              title="사회"
+              articles={societyArticles}
+              moreHref="/section/society"
             />
-
             <SectionNewsGrid data={allSectionArticles} />
           </div>
 

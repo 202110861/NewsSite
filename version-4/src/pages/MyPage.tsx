@@ -7,9 +7,18 @@ import {
   type MyCommentItem,
   type MyLikeItem,
 } from "../lib/engagement";
+import { api, type SubscriptionPlan } from "../lib/api";
 import { getApiErrorMessage } from "../lib/errors";
 import { sectionMap } from "../data/sections";
 import type { SectionId } from "../types/news";
+
+interface MySubscription {
+  id: string;
+  status: "ACTIVE" | "PAST_DUE" | "CANCELLED";
+  phoneNumber: string;
+  startedAt: string;
+  plan: SubscriptionPlan;
+}
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleString("ko-KR", {
@@ -25,19 +34,26 @@ export default function MyPage() {
   const { user } = useAuth();
   const [likes, setLikes] = useState<MyLikeItem[]>([]);
   const [comments, setComments] = useState<MyCommentItem[]>([]);
+  const [subscription, setSubscription] = useState<MySubscription | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [cancelling, setCancelling] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
     setError("");
 
-    Promise.all([fetchMyLikes(), fetchMyComments()])
-      .then(([likeList, commentList]) => {
+    Promise.all([
+      fetchMyLikes(),
+      fetchMyComments(),
+      api.get<MySubscription | null>("/subscriptions/me"),
+    ])
+      .then(([likeList, commentList, sub]) => {
         if (cancelled) return;
         setLikes(likeList);
         setComments(commentList);
+        setSubscription(sub);
       })
       .catch((err) => {
         if (!cancelled) {
@@ -55,6 +71,22 @@ export default function MyPage() {
     };
   }, []);
 
+  async function handleCancelSubscription() {
+    if (!subscription) return;
+    if (!window.confirm("후원 구독을 해지하시겠습니까?")) return;
+    setCancelling(true);
+    setError("");
+    try {
+      await api.patch("/subscriptions/me/cancel");
+      setSubscription(null);
+      window.alert("해지되었습니다.");
+    } catch (err) {
+      setError(getApiErrorMessage(err, "해지에 실패했습니다."));
+    } finally {
+      setCancelling(false);
+    }
+  }
+
   if (loading) {
     return (
       <div className="mx-auto max-w-3xl px-4 py-16 text-center text-sm text-ink-500">
@@ -71,6 +103,42 @@ export default function MyPage() {
       </p>
 
       {error && <p className="mt-4 text-sm text-flash-600">{error}</p>}
+
+      <section className="mt-10">
+        <h2 className="text-lg font-bold text-ink-900">후원 구독</h2>
+        {!subscription ? (
+          <p className="mt-3 text-sm text-ink-500">
+            진행 중인 후원이 없습니다.{" "}
+            <Link to="/support" className="font-semibold text-flash-600 underline">
+              후원하기
+            </Link>
+          </p>
+        ) : (
+          <div className="mt-4 rounded-xl border border-ink-900/10 bg-white p-5">
+            <p className="text-sm font-semibold text-ink-700">
+              {subscription.plan.label}
+            </p>
+            <p className="mt-1 text-xl font-bold text-ink-900">
+              {subscription.plan.amount.toLocaleString("ko-KR")}원
+              <span className="text-sm font-normal text-ink-500">/월</span>
+            </p>
+            <p className="mt-2 text-xs text-ink-500">
+              상태: {subscription.status === "ACTIVE" ? "이용 중" : "결제 지연"} ·
+              시작일 {formatDate(subscription.startedAt)}
+            </p>
+            {subscription.status === "ACTIVE" && (
+              <button
+                type="button"
+                onClick={handleCancelSubscription}
+                disabled={cancelling}
+                className="mt-4 rounded-lg border border-ink-900/15 px-4 py-2 text-sm font-semibold text-ink-700 hover:bg-paper-100 disabled:opacity-60"
+              >
+                {cancelling ? "해지 중…" : "구독 해지"}
+              </button>
+            )}
+          </div>
+        )}
+      </section>
 
       <section className="mt-10">
         <h2 className="text-lg font-bold text-ink-900">좋아요한 기사</h2>
