@@ -1,20 +1,21 @@
 import { Router } from 'express'
 import {
-  handlePaymentWebhook,
-  verifyWebhookSignature,
-  webhookSchema,
+  handlePortOneWebhook,
+  portoneWebhookSchema,
 } from '../subscriptions/subscriptions.service.js'
 
 export const paymentsRouter = Router()
 
 paymentsRouter.post('/webhook', async (req, res, next) => {
   try {
-    const payload = webhookSchema.parse(req.body)
-    if (!verifyWebhookSignature(payload.signature)) {
-      res.status(401).json({ message: '유효하지 않은 웹훅 서명입니다.' })
+    console.log('[webhook] raw body:', req.body)
+    const parsed = portoneWebhookSchema.safeParse(req.body)
+    if (!parsed.success) {
+      // PortOne 호출 테스트 등 비표준 페이로드도 수신 확인용으로 200
+      res.json({ ok: true, received: true })
       return
     }
-    const result = await handlePaymentWebhook(payload)
+    const result = await handlePortOneWebhook(parsed.data)
     res.json(result)
   } catch (err) {
     next(err)

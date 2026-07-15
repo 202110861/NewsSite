@@ -22,6 +22,11 @@ const envSchema = z.object({
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
   GOOGLE_REDIRECT_URI: z.string().url().optional(),
+  PORTONE_IMP_CODE: z.string().optional(),
+  PORTONE_API_KEY: z.string().optional(),
+  PORTONE_API_SECRET: z.string().optional(),
+  PORTONE_CHANNEL_KEY: z.string().optional(),
+  PORTONE_PG: z.string().default('danal'),
 })
 
 export const env = envSchema.parse(process.env)
@@ -47,5 +52,25 @@ export function requireGoogleOAuth() {
     clientId: GOOGLE_CLIENT_ID,
     clientSecret: GOOGLE_CLIENT_SECRET,
     redirectUri: GOOGLE_REDIRECT_URI,
+  }
+}
+
+export function requirePortOne() {
+  const {
+    PORTONE_IMP_CODE,
+    PORTONE_API_KEY,
+    PORTONE_API_SECRET,
+    PORTONE_CHANNEL_KEY,
+    PORTONE_PG,
+  } = env
+  if (!PORTONE_IMP_CODE || !PORTONE_API_KEY || !PORTONE_API_SECRET) {
+    throw new AppError(503, 'PortOne 결제가 아직 설정되지 않았습니다.')
+  }
+  return {
+    impCode: PORTONE_IMP_CODE,
+    apiKey: PORTONE_API_KEY,
+    apiSecret: PORTONE_API_SECRET,
+    channelKey: PORTONE_CHANNEL_KEY,
+    pg: PORTONE_PG,
   }
 }
