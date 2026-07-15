@@ -2,17 +2,30 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api, type SubscriptionPlan } from '../lib/api'
 import { getApiErrorMessage } from '../lib/errors'
-import PhoneBillingModal from '../components/PhoneBillingModal'
+import { requestPhoneBilling } from '../lib/portone'
+import { useAuth } from '../context/AuthContext'
+
+interface StartPaymentResult {
+  subscriptionId: string
+  merchantUid: string
+  customerUid: string
+  amount: number
+  orderName: string
+  phoneNumber: string
+  impCode: string
+  channelKey?: string
+  pg: string
+}
 
 export default function SupportPage() {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [plans, setPlans] = useState<SubscriptionPlan[]>([])
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null)
   const [phoneNumber, setPhoneNumber] = useState('')
-  const [paymentId, setPaymentId] = useState<string | null>(null)
-  const [modalOpen, setModalOpen] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
+  const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
     api
@@ -38,23 +51,39 @@ export default function SupportPage() {
       return
     }
 
+    setSubmitting(true)
     try {
-      const result = await api.post<{ paymentId: string }>('/subscriptions', {
+      const started = await api.post<StartPaymentResult>('/subscriptions', {
         planId: selectedPlanId,
         phoneNumber: phoneNumber.replace(/-/g, ''),
       })
-      setPaymentId(result.paymentId)
-      setModalOpen(true)
+
+      const rsp = await requestPhoneBilling({
+        impCode: started.impCode,
+        channelKey: started.channelKey,
+        pg: started.pg,
+        merchantUid: started.merchantUid,
+        customerUid: started.customerUid,
+        amount: started.amount,
+        orderName: started.orderName,
+        phoneNumber: started.phoneNumber,
+        buyerName: user?.username,
+      })
+
+      if (!rsp.imp_uid || !rsp.merchant_uid) {
+        throw new Error('결제 정보가 올바르지 않습니다.')
+      }
+
+      await api.post('/subscriptions/complete', {
+        impUid: rsp.imp_uid,
+        merchantUid: rsp.merchant_uid,
+      })
+      navigate('/support/complete')
     } catch (err) {
       setError(getApiErrorMessage(err, '결제 요청에 실패했습니다.'))
+    } finally {
+      setSubmitting(false)
     }
-  }
-
-  async function handleComplete(authCode: string) {
-    if (!paymentId) return
-    await api.post('/subscriptions/callback', { paymentId, authCode })
-    setModalOpen(false)
-    navigate('/support/complete')
   }
 
   if (loading) {
@@ -69,10 +98,11 @@ export default function SupportPage() {
     <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
       <h1 className="text-2xl font-bold text-ink-900">후원 구독</h1>
       <p className="mt-2 text-sm text-ink-600">
-        핸드폰 요금으로 매월 정기 후원할 수 있습니다.
+        핸드폰 요금으로 매월 정기 후원할 수 있습니다. 결제일은 가입일 기준이며,
+        해지 시 즉시 중단됩니다.
       </p>
 
-      <div className="mt-8 grid gap-4 sm:grid-cols-3">
+      <div className="mt-8 grid gap-4 sm:grid-cols-2">
         {plans.map((plan) => (
           <button
             key={plan.id}
@@ -112,20 +142,15 @@ export default function SupportPage() {
       <button
         type="button"
         onClick={handleStartPayment}
-        className="mt-6 w-full rounded-lg bg-gold-600 py-3 text-sm font-bold text-white hover:bg-gold-500"
+        disabled={submitting}
+        className="mt-6 w-full rounded-lg bg-gold-600 py-3 text-sm font-bold text-white hover:bg-gold-500 disabled:opacity-60"
       >
-        {selectedPlan
-          ? `${selectedPlan.amount.toLocaleString('ko-KR')}원 결제하기`
-          : '결제하기'}
+        {submitting
+          ? '결제 진행 중…'
+          : selectedPlan
+            ? `${selectedPlan.amount.toLocaleString('ko-KR')}원 결제하기`
+            : '결제하기'}
       </button>
-
-      <PhoneBillingModal
-        open={modalOpen}
-        amount={selectedPlan?.amount ?? 0}
-        phoneNumber={phoneNumber}
-        onClose={() => setModalOpen(false)}
-        onComplete={handleComplete}
-      />
     </div>
   )
 }

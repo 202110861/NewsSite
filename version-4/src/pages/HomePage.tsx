@@ -102,11 +102,6 @@ export default function HomePage() {
           <div className="min-w-0 w-full max-w-full">
             <HeroHeadlines articles={heroArticles} />
             <NewsCarousel
-              title="사회"
-              articles={societyArticles}
-              moreHref="/section/society"
-            />
-            <NewsCarousel
               title="정치"
               articles={politicsArticles}
               moreHref="/section/politics"
@@ -122,11 +117,10 @@ export default function HomePage() {
               moreHref="/section/video"
             />
             <NewsCarousel
-              title="이벤트/행사"
-              articles={eventArticles}
-              moreHref="/section/event"
+              title="사회"
+              articles={societyArticles}
+              moreHref="/section/society"
             />
-
             <SectionNewsGrid data={allSectionArticles} />
           </div>
 
