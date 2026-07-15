@@ -3,6 +3,7 @@ import HotIssueTicker from "../components/HotIssueTicker";
 import HeroHeadlines from "../components/HeroHeadlines";
 import NewsCarousel from "../components/NewsCarousel";
 import SectionNewsGrid from "../components/SectionNewsGrid";
+import { HomePageSkeleton } from "../components/skeleton";
 import { fetchArticles } from "../lib/articles";
 import type { Article } from "../types/news";
 
@@ -80,11 +81,7 @@ export default function HomePage() {
   }, []);
 
   if (loading) {
-    return (
-      <div className="mx-auto max-w-6xl px-4 py-20 text-center text-sm text-ink-500">
-        뉴스를 불러오는 중…
-      </div>
-    );
+    return <HomePageSkeleton />;
   }
 
   return (

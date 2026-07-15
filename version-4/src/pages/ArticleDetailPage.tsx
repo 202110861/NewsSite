@@ -11,6 +11,7 @@ import {
 import { sectionMap, sections } from "../data/sections";
 import SectionTag from "../components/SectionTag";
 import NewsCarousel from "../components/NewsCarousel";
+import { ArticleDetailSkeleton } from "../components/skeleton";
 import ArticleAdminMenu from "../components/admin/ArticleAdminMenu";
 import ArticleInlineEditBody from "../components/admin/ArticleInlineEditBody";
 import { useAuth } from "../context/AuthContext";
@@ -333,11 +334,7 @@ export default function ArticleDetailPage() {
   }
 
   if (loading) {
-    return (
-      <div className="mx-auto max-w-3xl px-4 py-20 text-center text-sm text-ink-500">
-        기사를 불러오는 중…
-      </div>
-    );
+    return <ArticleDetailSkeleton />;
   }
 
   if (notFound || !article) {
