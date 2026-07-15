@@ -10,8 +10,7 @@ const adSlots = [
 ]
 
 const plans = [
-  { amount: 5000, label: '커피 한 잔' },
-  { amount: 7000, label: '든든한 후원' },
+  { amount: 5000, label: '기본 후원' },
   { amount: 9000, label: '특별 후원' },
 ]
 
@@ -30,8 +29,18 @@ async function main() {
     const existing = await prisma.subscriptionPlan.findFirst({ where: { amount: plan.amount } })
     if (!existing) {
       await prisma.subscriptionPlan.create({ data: plan })
+    } else {
+      await prisma.subscriptionPlan.update({
+        where: { id: existing.id },
+        data: { label: plan.label, isActive: true },
+      })
     }
   }
+
+  await prisma.subscriptionPlan.updateMany({
+    where: { amount: { notIn: [5000, 9000] } },
+    data: { isActive: false },
+  })
 
   await seedAdminUser(prisma)
 

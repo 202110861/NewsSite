@@ -183,6 +183,7 @@ model Payment {
   subscriptionId  String
   amount          Int
   status          PaymentStatus
+  merchantUid     String?       @unique
   pgTransactionId String?
   paidAt          DateTime?
   createdAt       DateTime      @default(now())
