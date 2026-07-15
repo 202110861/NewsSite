@@ -80,7 +80,7 @@ export default function CategoryNav({
             />
           </Link>
 
-          <ul className="flex min-w-0 flex-1 items-stretch overflow-x-auto scrollbar-hide">
+          <ul className="flex min-w-0 flex-1 items-stretch justify-center overflow-x-auto scrollbar-hide">
             {sections.map((s) => (
               <li key={s.id} className="shrink-0">
                 <Link
@@ -102,7 +102,7 @@ export default function CategoryNav({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="뉴스 검색"
-              className="w-32 bg-transparent px-3 py-1.5 text-sm text-ink-900 outline-none placeholder:text-ink-300 min-w-25"
+              className="w-40 bg-transparent px-3 py-1.5 text-sm text-ink-900 outline-none placeholder:text-ink-300 min-w-25"
             />
             <button
               type="submit"
