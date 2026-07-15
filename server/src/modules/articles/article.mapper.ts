@@ -15,6 +15,7 @@ interface ArticleRow {
   title: string;
   sectionId: string;
   isVideo: boolean;
+  isAI: boolean;
   excerpt: string | null;
   reporter: string;
   viewCount: number;
@@ -42,6 +43,7 @@ export interface FrontendArticle {
   section: string;
   image?: string;
   isVideo?: boolean;
+  isAI?: boolean;
   publishedAt: string;
   excerpt?: string;
   body?: FrontendBodyBlock[];
@@ -137,6 +139,7 @@ export function toFrontendArticle(article: ArticleRow): FrontendArticle {
     section: article.sectionId,
     image: cover.image,
     isVideo: cover.isVideo,
+    isAI: article.isAI || undefined,
     publishedAt: (article.publishedAt ?? article.createdAt).toISOString(),
     excerpt: article.excerpt ?? undefined,
     body: body.length > 0 ? body : undefined,
@@ -155,6 +158,7 @@ export interface CreateArticleInput {
   excerpt?: string;
   reporter?: string;
   sourceUrl?: string;
+  isAI?: boolean;
   blocks?: BodyBlockInput[];
 }
 
@@ -169,6 +173,7 @@ export function buildArticleCreateData(
     sectionId: input.sectionId,
     status,
     isVideo: flags.isVideo,
+    isAI: input.isAI ?? false,
     excerpt: input.excerpt,
     reporter: input.reporter ?? "발행인",
     sourceUrl: input.sourceUrl,

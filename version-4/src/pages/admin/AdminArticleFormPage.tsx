@@ -22,6 +22,7 @@ export default function AdminArticleFormPage() {
   const [sectionId, setSectionId] = useState<SectionId>(
     sections[0]?.id ?? "politics",
   );
+  const [isAI, setIsAI] = useState(false);
   const [blocks, setBlocks] = useState<BodyBlockInput[]>([
     { type: "TEXT", text: "" },
   ]);
@@ -39,6 +40,7 @@ export default function AdminArticleFormPage() {
         if (cancelled) return;
         setTitle(article.title);
         setSectionId(article.sectionId as SectionId);
+        setIsAI(Boolean(article.isAI));
         setBlocks(
           article.blocks.length > 0
             ? article.blocks
@@ -76,6 +78,7 @@ export default function AdminArticleFormPage() {
       const payload = {
         title: title.trim(),
         sectionId,
+        isAI,
         blocks: normalizedBlocks(),
       };
 
@@ -119,6 +122,7 @@ export default function AdminArticleFormPage() {
       await updateAdminArticle(id, {
         title: title.trim(),
         sectionId,
+        isAI,
         blocks: normalizedBlocks(),
       });
       await approveAdminArticle(id);
@@ -182,6 +186,18 @@ export default function AdminArticleFormPage() {
             ))}
           </select>
         </div>
+
+        <label className="flex cursor-pointer items-center gap-2.5">
+          <input
+            type="checkbox"
+            checked={isAI}
+            onChange={(e) => setIsAI(e.target.checked)}
+            className="size-4 rounded border-ink-900/30 text-flash-600 focus:ring-flash-600"
+          />
+          <span className="text-sm font-semibold text-ink-700">
+            AI 생성물
+          </span>
+        </label>
 
         <div>
           <label className="mb-2 block text-sm font-semibold text-ink-700">

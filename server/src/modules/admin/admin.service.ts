@@ -53,6 +53,7 @@ function toAdminArticle(
     status: article.status,
     excerpt: article.excerpt,
     reporter: article.reporter,
+    isAI: article.isAI,
     createdAt: article.createdAt.toISOString(),
     updatedAt: article.updatedAt.toISOString(),
     blocks: article.bodyBlocks
@@ -114,6 +115,7 @@ export async function updateAdminArticle(
         title: input.title ?? existing.title,
         sectionId: input.sectionId ?? existing.sectionId,
         isVideo: flags?.isVideo ?? existing.isVideo,
+        isAI: input.isAI ?? existing.isAI,
         excerpt: input.excerpt ?? existing.excerpt,
         reporter: input.reporter ?? existing.reporter,
         sourceUrl: input.sourceUrl ?? existing.sourceUrl,
