@@ -83,7 +83,12 @@ export default function HomePage() {
   return (
     <div className="mx-auto flex w-full min-w-0 justify-center gap-4 overflow-x-hidden">
       <div className="min-w-0 flex-1">
-        <HotIssueTicker />
+        <HotIssueTicker
+          items={heroArticles.map((article) => ({
+            id: article.id,
+            title: article.title,
+          }))}
+        />
 
         <div className="flex min-w-0 justify-center gap-4">
           <aside className="hidden w-40 shrink-0 lg:block sm:my-6">
