@@ -13,7 +13,7 @@ const GRID_SECTIONS = [
   "culture",
   "entertainment",
   "local",
-  "event",
+  "society",
 ] as const;
 
 export default function HomePage() {

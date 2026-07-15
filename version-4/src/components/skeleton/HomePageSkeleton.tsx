@@ -32,7 +32,7 @@ function SectionGridSkeleton() {
       <div className="mx-auto w-full min-w-0 max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
         <Skeleton className="mb-4 h-6 w-36 rounded-sm sm:mb-5 sm:h-7" />
         <div className="grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2 md:gap-5 lg:grid-cols-3 lg:gap-6">
-          {Array.from({ length: 6 }).map((_, i) => (
+          {Array.from({ length: 5 }).map((_, i) => (
             <div
               key={i}
               className="min-w-0 overflow-hidden rounded-lg bg-paper-50 p-3 shadow-sm sm:p-4"
