@@ -1,63 +1,196 @@
+import {
+  useEffect,
+  useRef,
+  useState,
+  type TouchEvent as ReactTouchEvent,
+} from "react";
 import { Link } from "react-router-dom";
 import type { Article } from "../types/news";
 import SectionTag from "./SectionTag";
 import { resolveMediaUrl } from "../utils/media";
 
-export default function HeroHeadlines({ articles }: { articles: Article[] }) {
-  const [main, ...rest] = articles;
+const AUTO_MS = 5000;
+const SWIPE_THRESHOLD = 40;
 
-  if (!main) return null;
+export default function HeroHeadlines({ articles }: { articles: Article[] }) {
+  const count = articles.length;
+  const [index, setIndex] = useState(0);
+  const [animate, setAnimate] = useState(true);
+  const [paused, setPaused] = useState(false);
+  const touchStartX = useRef<number | null>(null);
+  const suppressClick = useRef(false);
+
+  // 끝 → 처음 루프를 위해 첫 슬라이드를 맨 뒤에 복제
+  const slides = count > 1 ? [...articles, articles[0]] : articles;
+
+  useEffect(() => {
+    setIndex(0);
+    setAnimate(true);
+  }, [count]);
+
+  useEffect(() => {
+    if (count <= 1 || paused) return;
+
+    const timer = window.setInterval(() => {
+      setAnimate(true);
+      setIndex((prev) => prev + 1);
+    }, AUTO_MS);
+
+    return () => window.clearInterval(timer);
+  }, [count, paused]);
+
+  function goTo(next: number) {
+    if (count <= 1) return;
+    setAnimate(true);
+    setIndex(next);
+  }
+
+  function goNext() {
+    goTo(index + 1);
+  }
+
+  function goPrev() {
+    if (count <= 1) return;
+
+    if (index === 0) {
+      setAnimate(false);
+      setIndex(count);
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => {
+          setAnimate(true);
+          setIndex(count - 1);
+        });
+      });
+      return;
+    }
+
+    goTo(index - 1);
+  }
+
+  function handleTransitionEnd() {
+    if (count <= 1 || index < count) return;
+    // 복제 슬라이드 도착 → 실제 첫 장으로 점프 (애니메이션 없이)
+    setAnimate(false);
+    setIndex(0);
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => setAnimate(true));
+    });
+  }
+
+  function onTouchStart(e: ReactTouchEvent) {
+    touchStartX.current = e.touches[0]?.clientX ?? null;
+    suppressClick.current = false;
+    setPaused(true);
+  }
+
+  function onTouchEnd(e: ReactTouchEvent) {
+    const start = touchStartX.current;
+    touchStartX.current = null;
+    setPaused(false);
+    if (start == null) return;
+
+    const end = e.changedTouches[0]?.clientX;
+    if (end == null) return;
+
+    const delta = start - end;
+    if (Math.abs(delta) < SWIPE_THRESHOLD) return;
+
+    suppressClick.current = true;
+    if (delta > 0) goNext();
+    else goPrev();
+  }
+
+  if (count === 0) return null;
+
+  const activeDot = index % count;
 
   return (
-    <section className="mx-auto w-full min-w-0 max-w-6xl pt-6 sm:px-6">
-      <div className="grid min-w-0 gap-4 lg:grid-cols-[1.6fr_1fr] lg:gap-5">
-        {/* 메인 헤드라인 */}
-        <Link
-          to={`/article/${main.id}`}
-          className="group relative block min-w-0 overflow-hidden rounded-lg bg-ink-950"
+    <section
+      className="mx-auto w-full min-w-0 max-w-6xl px-6 pt-6 sm:px-6"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+    >
+      <div className="relative min-w-0 h-[calc(60vh-0.5rem)] overflow-hidden rounded-lg bg-ink-950">
+        <div
+          className="flex h-full"
+          style={{
+            transform: `translateX(-${index * 100}%)`,
+            transition: animate ? "transform 500ms ease" : "none",
+          }}
+          onTransitionEnd={handleTransitionEnd}
+          onTouchStart={onTouchStart}
+          onTouchEnd={onTouchEnd}
         >
-          <div className="relative aspect-[16/9] max-h-[52vw] w-full sm:max-h-[280px] lg:aspect-[16/12] lg:max-h-none">
-            <img
-              src={resolveMediaUrl(main.image ?? "")}
-              alt=""
-              className="absolute inset-0 h-full w-full object-cover opacity-90 transition duration-500 group-hover:scale-105 group-hover:opacity-100"
-              loading="eager"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-ink-950 via-ink-950/10 to-transparent" />
-            <div className="absolute inset-x-0 bottom-0 p-4 sm:p-7">
-              <SectionTag section={main.section} />
-              <h1 className="mt-2 text-lg font-bold leading-snug text-white sm:mt-3 sm:text-2xl lg:text-3xl">
-                {main.title}
-              </h1>
-            </div>
-          </div>
-        </Link>
-
-        {/* 보조 헤드라인 — 모바일: 세로 / PC(lg+): 가로 */}
-        <div className="flex min-w-0 flex-col gap-3 sm:gap-4">
-          {rest.map((a, index) => (
+          {slides.map((article, i) => (
             <Link
-              key={a.id}
-              to={`/article/${a.id}`}
-              className={`group flex min-w-0 flex-col overflow-hidden rounded-lg transition hover:bg-paper-100 lg:flex-row lg:gap-4 lg:p-1${index >= 2 ? " hidden sm:flex" : ""}`}
+              key={`${article.id}-${i}`}
+              to={`/article/${article.id}`}
+              className="group relative block h-full min-w-full shrink-0 overflow-hidden"
+              draggable={false}
+              onClick={(e) => {
+                if (suppressClick.current) {
+                  e.preventDefault();
+                  suppressClick.current = false;
+                }
+              }}
             >
-              <div className="relative aspect-[16/10] w-full overflow-hidden rounded-md bg-ink-100 sm:aspect-[4/3] lg:aspect-auto lg:h-28 lg:w-36 lg:shrink-0">
+              <div className="relative h-full w-full">
                 <img
-                  src={resolveMediaUrl(a.image ?? "")}
+                  src={resolveMediaUrl(article.image ?? "")}
                   alt=""
-                  className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                  loading="lazy"
+                  className="absolute inset-0 h-full w-full object-cover opacity-90 transition duration-500 group-hover:scale-105 group-hover:opacity-100"
+                  loading={i === 0 ? "eager" : "lazy"}
+                  draggable={false}
                 />
-              </div>
-              <div className="flex min-w-0 flex-col gap-1.5 pt-2 sm:gap-2 sm:pt-2.5 lg:justify-center lg:gap-2 lg:pt-0">
-                <SectionTag section={a.section} />
-                <h2 className="line-clamp-2 text-xs font-bold leading-snug text-ink-900 group-hover:text-flash-700 sm:text-sm lg:text-base">
-                  {a.title}
-                </h2>
+                <div className="absolute inset-0 bg-linear-to-t from-ink-950 via-ink-950/10 to-transparent" />
+                <div className="absolute inset-x-0 bottom-0 p-4 sm:p-7">
+                  <SectionTag section={article.section} />
+                  <h1 className="mt-2 text-lg font-bold leading-snug text-white sm:mt-3 sm:text-2xl lg:text-3xl">
+                    {article.title}
+                  </h1>
+                </div>
               </div>
             </Link>
           ))}
         </div>
+
+        {count > 1 && (
+          <>
+            <button
+              type="button"
+              onClick={goPrev}
+              aria-label="이전 헤드라인"
+              className="absolute left-2 top-1/2 z-10 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-ink-950/50 text-lg text-white backdrop-blur-sm hover:bg-ink-950/70 sm:left-3 lg:flex"
+            >
+              ‹
+            </button>
+            <button
+              type="button"
+              onClick={goNext}
+              aria-label="다음 헤드라인"
+              className="absolute right-2 top-1/2 z-10 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-ink-950/50 text-lg text-white backdrop-blur-sm hover:bg-ink-950/70 sm:right-3 lg:flex"
+            >
+              ›
+            </button>
+
+            <div className="absolute bottom-3 right-3 z-10 flex gap-1.5 sm:bottom-4 sm:right-4">
+              {articles.map((article, i) => (
+                <button
+                  key={article.id}
+                  type="button"
+                  aria-label={`${i + 1}번째 헤드라인`}
+                  aria-current={i === activeDot}
+                  onClick={() => goTo(i)}
+                  className={`h-1.5 rounded-full transition-all ${
+                    i === activeDot
+                      ? "w-5 bg-white"
+                      : "w-1.5 bg-white/45 hover:bg-white/70"
+                  }`}
+                />
+              ))}
+            </div>
+          </>
+        )}
       </div>
     </section>
   );
