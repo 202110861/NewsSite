@@ -4,7 +4,7 @@ import { sections } from "../data/sections";
 import { MastheadLinks } from "./MastheadBar";
 
 function navLinkClass(active: boolean) {
-  return `block truncate px-2 py-3 text-center text-xs font-bold tracking-tight transition lg:whitespace-nowrap lg:px-3 lg:py-3.5 lg:text-sm xl:px-3 ${
+  return `block truncate px-2 py-3 text-center text-xs font-bold tracking-tight transition lg:whitespace-nowrap lg:px-1 lg:py-1 lg:text-sm xl:px-3 ${
     active ? "bg-flash-600 text-white" : "text-paper-200 hover:bg-ink-800"
   }`;
 }
@@ -71,16 +71,16 @@ export default function CategoryNav({
     <>
       {/* Desktop unified bar */}
       <nav className="sticky top-0 z-30 hidden border-b border-ink-900/10 bg-ink-900 lg:block">
-        <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 xl:gap-4 xl:px-6">
-          <Link to="/" className="shrink-0 py-2">
+        <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 xl:gap-6 xl:px-6 justify-center">
+          <Link to="/" className="shrink-0">
             <img
               src="/logo(white).png"
               alt="경제인뉴스"
-              className="w-28 xl:w-35"
+              className="w-20 xl:w-22"
             />
           </Link>
 
-          <ul className="flex min-w-0 flex-1 items-stretch justify-center overflow-x-auto scrollbar-hide">
+          <ul className="flex overflow-x-auto scrollbar-hide">
             {sections.map((s) => (
               <li key={s.id} className="shrink-0">
                 <Link
@@ -102,12 +102,12 @@ export default function CategoryNav({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="뉴스 검색"
-              className="w-40 bg-transparent px-3 py-1.5 text-sm text-ink-900 outline-none placeholder:text-ink-300 min-w-25"
+              className="w-40 bg-transparent px-3 text-sm text-ink-900 outline-none placeholder:text-ink-300 min-w-25"
             />
             <button
               type="submit"
               aria-label="검색"
-              className="cursor-pointer px-2 py-1.5 text-ink-700 hover:text-flash-600"
+              className="cursor-pointer px-2  text-ink-700 hover:text-flash-600"
             >
               🔍
             </button>
