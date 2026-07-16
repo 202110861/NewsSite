@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { MastheadLinks } from "./MastheadBar";
+// import { MastheadLinks } from "./MastheadBar";
 
 interface HeaderProps {
   mobileNavOpen: boolean;
