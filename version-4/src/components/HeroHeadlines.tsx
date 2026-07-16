@@ -110,7 +110,7 @@ export default function HeroHeadlines({ articles }: { articles: Article[] }) {
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
-      <div className="relative min-w-0 h-[calc(60vh-0.5rem)] overflow-hidden rounded-lg bg-ink-950">
+      <div className="relative min-w-0 aspect-[16/9] w-full overflow-hidden rounded-lg bg-ink-950 lg:aspect-[21/9]">
         <div
           className="flex h-full"
           style={{
