@@ -48,13 +48,13 @@ export default function NewsCarousel({ title, articles, moreHref }: Props) {
             <Link
               key={a.id}
               to={`/article/${a.id}`}
-              className="group w-[82%] shrink-0 snap-start sm:w-[calc(50%-0.5rem)] md:w-[calc(33.333%-0.75rem)] lg:w-56"
+              className="group w-[calc(52%)] shrink-0 snap-start md:w-[calc(33.333%-0.75rem)] lg:w-56"
             >
               <div className="relative overflow-hidden rounded-md bg-ink-100">
                 <img
                   src={resolveMediaUrl(a.image ?? "")}
                   alt=""
-                  className="aspect-[4/3] w-full object-cover transition duration-500 group-hover:scale-105"
+                  className="aspect-4/3 w-full object-cover transition duration-500 group-hover:scale-105"
                   loading="lazy"
                 />
                 {a.isVideo && (

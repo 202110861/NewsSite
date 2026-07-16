@@ -32,7 +32,7 @@ function SectionGridSkeleton() {
       <div className="mx-auto w-full min-w-0 max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
         <Skeleton className="mb-4 h-6 w-36 rounded-sm sm:mb-5 sm:h-7" />
         <div className="grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2 md:gap-5 lg:grid-cols-3 lg:gap-6">
-          {Array.from({ length: 6 }).map((_, i) => (
+          {Array.from({ length: 5 }).map((_, i) => (
             <div
               key={i}
               className="min-w-0 overflow-hidden rounded-lg bg-paper-50 p-3 shadow-sm sm:p-4"
@@ -81,25 +81,8 @@ export default function HomePageSkeleton() {
           <aside className="hidden w-40 shrink-0 lg:block sm:my-6" />
 
           <div className="min-w-0 w-full max-w-full">
-            <section className="mx-auto w-full min-w-0 max-w-6xl pt-6 sm:px-6">
-              <div className="grid min-w-0 gap-4 lg:grid-cols-[1.6fr_1fr] lg:gap-5">
-                <Skeleton className="aspect-[16/9] max-h-[52vw] w-full rounded-lg sm:max-h-[280px] lg:aspect-[16/12] lg:max-h-none" />
-                <div className="flex min-w-0 flex-col gap-3 sm:gap-4">
-                  {Array.from({ length: 4 }).map((_, i) => (
-                    <div
-                      key={i}
-                      className={`flex min-w-0 flex-col gap-2 lg:flex-row lg:gap-4 lg:p-1${i >= 2 ? " hidden sm:flex" : ""}`}
-                    >
-                      <Skeleton className="aspect-[16/10] w-full rounded-md sm:aspect-[4/3] lg:aspect-auto lg:h-28 lg:w-36 lg:shrink-0" />
-                      <div className="flex min-w-0 flex-col gap-1.5 pt-2 sm:gap-2 lg:justify-center lg:pt-0">
-                        <Skeleton className="h-4 w-12 rounded-sm" />
-                        <Skeleton className="h-4 w-full" />
-                        <Skeleton className="h-4 w-4/5" />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+            <section className="mx-auto w-full min-w-0 max-w-6xl px-6 pt-6 sm:px-6">
+              <Skeleton className="aspect-[16/9] w-full rounded-lg lg:aspect-[21/9]" />
             </section>
 
             <CarouselSkeleton />

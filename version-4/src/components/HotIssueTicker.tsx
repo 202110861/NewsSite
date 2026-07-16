@@ -1,37 +1,10 @@
-import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { fetchArticles } from "../lib/articles";
 import type { HotIssueItem } from "../types/news";
 
-export default function HotIssueTicker() {
-  const [hotIssues, setHotIssues] = useState<HotIssueItem[]>([]);
+export default function HotIssueTicker({ items }: { items: HotIssueItem[] }) {
+  if (items.length === 0) return null;
 
-  useEffect(() => {
-    let cancelled = false;
-
-    fetchArticles({ limit: 5 })
-      .then((articles) => {
-        if (!cancelled) {
-          setHotIssues(
-            articles.map((article) => ({
-              id: article.id,
-              title: article.title,
-            })),
-          );
-        }
-      })
-      .catch(() => {
-        if (!cancelled) setHotIssues([]);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  if (hotIssues.length === 0) return null;
-
-  const items = [...hotIssues, ...hotIssues];
+  const tickerItems = [...items, ...items];
 
   return (
     <div className="flex items-stretch border-b border-ink-900/10 bg-flash-100">
@@ -46,7 +19,7 @@ export default function HotIssueTicker() {
       </div>
       <div className="relative flex-1 overflow-hidden">
         <ul className="flex w-max animate-ticker items-center gap-10 whitespace-nowrap px-6 py-2.5">
-          {items.map((item, i) => (
+          {tickerItems.map((item, i) => (
             <li key={`${item.id}-${i}`} className="text-sm text-ink-800">
               <Link to={`/article/${item.id}`} className="hover:text-flash-700">
                 {item.title}

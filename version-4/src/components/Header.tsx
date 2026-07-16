@@ -1,50 +1,53 @@
-import { useState } from "react";
-import type { FormEvent } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
+import { MastheadLinks } from "./MastheadBar";
 
-export default function Header() {
-  const [query, setQuery] = useState("");
-  const navigate = useNavigate();
+interface HeaderProps {
+  mobileNavOpen: boolean;
+  onToggleMobileNav: () => void;
+}
 
-  function handleSubmit(e: FormEvent) {
-    e.preventDefault();
-    const trimmed = query.trim();
-    if (!trimmed) return;
-    navigate(`/search?q=${encodeURIComponent(trimmed)}`);
-    setQuery("");
-  }
-
+export default function Header({
+  mobileNavOpen,
+  onToggleMobileNav,
+}: HeaderProps) {
   return (
-    <div className="border-b border-ink-900/10 bg-paper-50">
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
-        <Link to="/" className="flex items-baseline gap-2">
-          <img src="/logo.png" alt="logo" className="w-35" />
+    <div className="relative border-b border-ink-900/10 bg-paper-50 lg:hidden">
+      <div className="mx-auto flex max-w-6xl items-center justify-center gap-3 px-4 sm:px-6">
+        <Link to="/" className="flex shrink-0 items-baseline gap-2 py-2">
+          <img src="/logo.png" alt="경제인뉴스" className="w-28 sm:w-35" />
         </Link>
 
-        <div className="relative">
-          <form
-            className="flex items-center overflow-hidden rounded-full border border-ink-900 bg-paper-50"
-            onSubmit={(e) => e.preventDefault()}
+        <div className="flex min-w-0 items-center gap-2 sm:gap-3 absolute right-6">
+          {/* <MastheadLinks
+            className="flex min-w-0 shrink items-center gap-1.5 overflow-hidden text-[11px] text-ink-500 sm:gap-2"
+            linkClassName="whitespace-nowrap hover:text-ink-900"
+            separatorClassName="text-ink-300"
+          /> */}
+          <button
+            type="button"
+            aria-label="메뉴 열기"
+            aria-expanded={mobileNavOpen}
+            aria-controls="mobile-category-nav"
+            onClick={onToggleMobileNav}
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-ink-900 hover:bg-ink-900/5"
           >
-            <input
-              autoFocus
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="뉴스 검색"
-              className="w-36 bg-transparent px-4 py-2 text-sm text-ink-900 outline-none placeholder:text-ink-300 sm:w-56"
-            />
-            <button
-              type="submit"
-              aria-label="검색"
-              className="px-2 py-2 text-ink-700 hover:text-flash-600 cursor-pointer"
-              onClick={handleSubmit}
-            >
-              🔍
-            </button>
-          </form>
+            <HamburgerIcon />
+          </button>
         </div>
       </div>
     </div>
+  );
+}
+
+function HamburgerIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M4 7h16M4 12h16M4 17h16"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+    </svg>
   );
 }
