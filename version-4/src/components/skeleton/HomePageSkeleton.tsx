@@ -1,4 +1,5 @@
 import { Skeleton } from "./Skeleton";
+import ArticleSideNewsSkeleton from "./ArticleSideNewsSkeleton";
 
 function CarouselSkeleton() {
   return (
@@ -66,7 +67,7 @@ function SectionGridSkeleton() {
 export default function HomePageSkeleton() {
   return (
     <div
-      className="mx-auto flex w-full min-w-0 justify-center gap-4 overflow-x-hidden"
+      className="mx-auto flex w-full min-w-0 justify-center gap-4"
       aria-busy="true"
       aria-label="뉴스를 불러오는 중"
     >
@@ -78,21 +79,28 @@ export default function HomePageSkeleton() {
         </div>
 
         <div className="flex min-w-0 justify-center gap-4">
-          <aside className="hidden w-40 shrink-0 lg:block sm:my-6" />
+          <aside className="hidden w-40 shrink-0 sm:my-6 lg:block" />
 
-          <div className="min-w-0 w-full max-w-full">
-            <section className="mx-auto w-full min-w-0 max-w-6xl px-6 pt-6 sm:px-6">
-              <Skeleton className="aspect-[16/9] w-full rounded-lg lg:aspect-[21/9]" />
-            </section>
+          <div className="flex min-w-0 w-full max-w-full flex-col">
+            <div className="mb-6 flex justify-center gap-6">
+              <div className="flex min-w-0 flex-col">
+                <section className="mx-auto w-full min-w-0 max-w-6xl px-6 pt-6 sm:px-6">
+                  <Skeleton className="aspect-[16/9] w-full rounded-lg lg:aspect-[21/9]" />
+                </section>
 
-            <CarouselSkeleton />
-            <CarouselSkeleton />
-            <CarouselSkeleton />
-            <CarouselSkeleton />
+                <CarouselSkeleton />
+                <CarouselSkeleton />
+                <CarouselSkeleton />
+                <CarouselSkeleton />
+              </div>
+
+              <ArticleSideNewsSkeleton />
+            </div>
+
             <SectionGridSkeleton />
           </div>
 
-          <aside className="hidden w-40 shrink-0 lg:block sm:my-6" />
+          <aside className="hidden w-40 shrink-0 sm:my-6 lg:block" />
         </div>
       </div>
     </div>
