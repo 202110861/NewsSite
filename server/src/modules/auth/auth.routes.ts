@@ -164,6 +164,31 @@ authRouter.get('/google/callback', async (req, res) => {
   }
 })
 
+authRouter.get('/facebook', (_req, res, next) => {
+  try {
+    const state = oauthService.createOAuthState()
+    setOAuthStateCookie(res, state)
+    res.redirect(oauthService.getFacebookAuthorizeUrl(state))
+  } catch (err) {
+    next(err)
+  }
+})
+
+authRouter.get('/facebook/callback', async (req, res) => {
+  try {
+    const code = typeof req.query.code === 'string' ? req.query.code : undefined
+    const state = typeof req.query.state === 'string' ? req.query.state : undefined
+    if (!code) throw new AppError(400, '페이스북 인증 코드가 없습니다.')
+    assertOAuthState(req, state)
+    const result = await oauthService.completeFacebookLogin(code)
+    finishOAuthLogin(res, result)
+  } catch (err) {
+    const message =
+      err instanceof AppError ? err.message : '페이스북 로그인에 실패했습니다.'
+    redirectOAuthError(res, message)
+  }
+})
+
 export const usersRouter = Router()
 
 usersRouter.get('/me', authMiddleware, async (req: AuthRequest, res, next) => {

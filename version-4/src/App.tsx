@@ -14,6 +14,7 @@ import SupportPortOneReturnPage from "./pages/SupportPortOneReturnPage";
 import MyPage from "./pages/MyPage";
 import AdminReviewListPage from "./pages/admin/AdminReviewListPage";
 import AdminArticleFormPage from "./pages/admin/AdminArticleFormPage";
+import PolicyPage from "./pages/PolicyPage";
 function App() {
   return (
     <Layout>
@@ -73,6 +74,7 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route path="/policy/:type" element={<PolicyPage />} />
       </Routes>
     </Layout>
   );
