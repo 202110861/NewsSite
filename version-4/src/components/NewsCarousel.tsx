@@ -48,7 +48,7 @@ export default function NewsCarousel({ title, articles, moreHref }: Props) {
             <Link
               key={a.id}
               to={`/article/${a.id}`}
-              className="group w-[calc(52%)] shrink-0 snap-start md:w-[calc(33.333%-0.75rem)] lg:w-[calc(19.7%)] "
+              className="group w-[calc(34%)] shrink-0 snap-start md:w-[calc(33.333%-0.75rem)] lg:w-[calc(19.7%)] "
             >
               <div className="relative overflow-hidden rounded-md bg-ink-100">
                 <img
