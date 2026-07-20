@@ -15,6 +15,7 @@ enum UserRole {
 enum AuthProvider {
   GOOGLE
   NAVER
+  FACEBOOK
 }
 
 enum ArticleStatus {

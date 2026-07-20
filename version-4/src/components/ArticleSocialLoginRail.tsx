@@ -21,6 +21,13 @@ export default function ArticleSocialLoginRail() {
       >
         <GoogleIcon />
       </a>
+      <a
+        href={`${API_BASE}/auth/facebook`}
+        aria-label="Facebook으로 로그인"
+        className="flex h-10 w-10 items-center justify-center bg-[#1877F2] text-white hover:brightness-95"
+      >
+        <FacebookIcon />
+      </a>
     </aside>
   );
 }
@@ -54,6 +61,17 @@ function GoogleIcon() {
       <path
         fill="#EA4335"
         d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58Z"
+      />
+    </svg>
+  );
+}
+
+function FacebookIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        fill="currentColor"
+        d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"
       />
     </svg>
   );
