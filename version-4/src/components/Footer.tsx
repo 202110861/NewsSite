@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useState } from "react";
+import { Link } from "react-router-dom";
 
 const VIEW_MODE_KEY = "newsin-view-mode";
 const MOBILE_VIEWPORT = "width=device-width, initial-scale=1.0";
@@ -49,9 +50,24 @@ export default function Footer() {
                 <span>등록일자 : 2020.01.17 ㅣ</span>
                 <span>발행일자 : 2020.01.17 ㅣ</span>
                 <span>발행인 : 신홍태 ㅣ 편집인 : 신홍태 | </span>
-                <span className="cursor-pointer">
-                  청소년보호정책(책임자 : 신홍태)
-                </span>
+                <Link
+                  to="/policy/youth"
+                  className="shrink-0 hover:text-white hover:underline"
+                >
+                  청소년보호정책(책임자 : 신홍태) |
+                </Link>
+                <Link
+                  to="/policy/personal"
+                  className="shrink-0 hover:text-white hover:underline"
+                >
+                  개인정보처리방침 |
+                </Link>
+                <Link
+                  to="/policy/terms"
+                  className="shrink-0 hover:text-white hover:underline"
+                >
+                  이용약관 |
+                </Link>
               </p>
             </div>
 

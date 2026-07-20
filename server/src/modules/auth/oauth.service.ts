@@ -1,7 +1,11 @@
 import { createHash, randomBytes } from 'node:crypto'
 import type { AuthProvider } from '@prisma/client'
 import { prisma } from '../../db/client.js'
-import { requireGoogleOAuth, requireNaverOAuth } from '../../config/env.js'
+import {
+  requireFacebookOAuth,
+  requireGoogleOAuth,
+  requireNaverOAuth,
+} from '../../config/env.js'
 import { AppError } from '../../middlewares/errorHandler.middleware.js'
 import { getRefreshExpiry, signAccessToken, signRefreshToken } from '../../utils/jwt.js'
 
@@ -120,6 +124,18 @@ export function getGoogleAuthorizeUrl(state: string) {
   return `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`
 }
 
+export function getFacebookAuthorizeUrl(state: string) {
+  const { appId, redirectUri } = requireFacebookOAuth()
+  const params = new URLSearchParams({
+    client_id: appId,
+    redirect_uri: redirectUri,
+    state,
+    response_type: 'code',
+    scope: 'email,public_profile',
+  })
+  return `https://www.facebook.com/v21.0/dialog/oauth?${params.toString()}`
+}
+
 export async function completeNaverLogin(code: string) {
   const { clientId, clientSecret, redirectUri } = requireNaverOAuth()
 
@@ -222,6 +238,64 @@ export async function completeGoogleLogin(code: string) {
 
   return findOrCreateOAuthUser({
     provider: 'GOOGLE',
+    providerUserId: profile.id,
+    usernameHint,
+  })
+}
+
+export async function completeFacebookLogin(code: string) {
+  const { appId, appSecret, redirectUri } = requireFacebookOAuth()
+
+  const tokenParams = new URLSearchParams({
+    client_id: appId,
+    client_secret: appSecret,
+    redirect_uri: redirectUri,
+    code,
+  })
+
+  const tokenRes = await fetch(
+    `https://graph.facebook.com/v21.0/oauth/access_token?${tokenParams.toString()}`,
+  )
+  const tokenBody = (await tokenRes.json()) as {
+    access_token?: string
+    error?: { message?: string }
+  }
+
+  if (!tokenRes.ok || !tokenBody.access_token) {
+    throw new AppError(
+      401,
+      tokenBody.error?.message ?? '페이스북 토큰 발급에 실패했습니다.',
+    )
+  }
+
+  const profileParams = new URLSearchParams({
+    fields: 'id,name,email',
+    access_token: tokenBody.access_token,
+  })
+  const profileRes = await fetch(
+    `https://graph.facebook.com/v21.0/me?${profileParams.toString()}`,
+  )
+  const profile = (await profileRes.json()) as {
+    id?: string
+    name?: string
+    email?: string
+    error?: { message?: string }
+  }
+
+  if (!profileRes.ok || !profile.id) {
+    throw new AppError(
+      401,
+      profile.error?.message ?? '페이스북 사용자 정보를 가져오지 못했습니다.',
+    )
+  }
+
+  const usernameHint =
+    profile.email?.split('@')[0] ||
+    profile.name ||
+    `facebook_${profile.id.slice(0, 8)}`
+
+  return findOrCreateOAuthUser({
+    provider: 'FACEBOOK',
     providerUserId: profile.id,
     usernameHint,
   })
