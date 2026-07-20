@@ -31,6 +31,16 @@ export function errorHandler(err: unknown, _req: Request, res: Response, _next: 
   }
   if (err instanceof Prisma.PrismaClientKnownRequestError) {
     console.error('Prisma error:', err.code, err.meta)
+    if (err.code === 'P2003') {
+      const field = String(err.meta?.field_name ?? '')
+      if (field.includes('sectionId') || field.includes('Section')) {
+        res.status(400).json({
+          message:
+            '선택한 섹션이 DB에 없습니다. 서버에서 npm run db:seed 를 실행해 주세요.',
+        })
+        return
+      }
+    }
     res.status(500).json({ message: '데이터베이스 오류가 발생했습니다.' })
     return
   }
