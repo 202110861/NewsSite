@@ -7,7 +7,7 @@ import {
   type MyCommentItem,
   type MyLikeItem,
 } from "../lib/engagement";
-import { api, type SubscriptionPlan } from "../lib/api";
+import { api, PAY_METHOD_LABELS, type PayMethod, type SubscriptionPlan } from "../lib/api";
 import { getApiErrorMessage } from "../lib/errors";
 import { sectionMap } from "../data/sections";
 import type { SectionId } from "../types/news";
@@ -15,9 +15,16 @@ import type { SectionId } from "../types/news";
 interface MySubscription {
   id: string;
   status: "ACTIVE" | "PAST_DUE" | "CANCELLED";
+  payMethod: PayMethod;
   phoneNumber: string;
   startedAt: string;
   plan: SubscriptionPlan;
+  payments?: {
+    status: "PENDING" | "SUCCESS" | "FAILED";
+    amount: number;
+    merchantUid: string | null;
+    paidAt: string | null;
+  }[];
 }
 
 function formatDate(iso: string) {
@@ -73,7 +80,14 @@ export default function MyPage() {
 
   async function handleCancelSubscription() {
     if (!subscription) return;
-    if (!window.confirm("후원 구독을 해지하시겠습니까?")) return;
+    const methodLabel = PAY_METHOD_LABELS[subscription.payMethod];
+    if (
+      !window.confirm(
+        `${methodLabel} 후원 구독을 해지하시겠습니까?\n해지 후 다음 달부터 결제되지 않습니다.`,
+      )
+    ) {
+      return;
+    }
     setCancelling(true);
     setError("");
     try {
@@ -86,6 +100,8 @@ export default function MyPage() {
       setCancelling(false);
     }
   }
+
+  const pendingPayment = subscription?.payments?.find((p) => p.status === "PENDING");
 
   if (loading) {
     return (
@@ -123,17 +139,34 @@ export default function MyPage() {
               <span className="text-sm font-normal text-ink-500">/월</span>
             </p>
             <p className="mt-2 text-xs text-ink-500">
-              상태: {subscription.status === "ACTIVE" ? "이용 중" : "결제 지연"} ·
-              시작일 {formatDate(subscription.startedAt)}
+              결제 수단: {PAY_METHOD_LABELS[subscription.payMethod]} ·
+              상태:{" "}
+              {subscription.status === "ACTIVE"
+                ? "이용 중"
+                : subscription.status === "PAST_DUE"
+                  ? "결제 대기"
+                  : "해지됨"}{" "}
+              · 시작일 {formatDate(subscription.startedAt)}
             </p>
-            {subscription.status === "ACTIVE" && (
+            {pendingPayment && subscription.status === "ACTIVE" && (
+              <p className="mt-1 text-xs text-ink-500">
+                다음 자동결제 {pendingPayment.amount.toLocaleString("ko-KR")}원 예약됨
+                {pendingPayment.merchantUid
+                  ? ` (${pendingPayment.merchantUid.slice(0, 20)}…)`
+                  : ""}
+              </p>
+            )}
+            {(subscription.status === "ACTIVE" ||
+              subscription.status === "PAST_DUE") && (
               <button
                 type="button"
                 onClick={handleCancelSubscription}
                 disabled={cancelling}
                 className="mt-4 rounded-lg border border-ink-900/15 px-4 py-2 text-sm font-semibold text-ink-700 hover:bg-paper-100 disabled:opacity-60"
               >
-                {cancelling ? "해지 중…" : "구독 해지"}
+                {cancelling
+                  ? "해지 중…"
+                  : `${PAY_METHOD_LABELS[subscription.payMethod]} 구독 해지`}
               </button>
             )}
           </div>

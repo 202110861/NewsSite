@@ -29,6 +29,14 @@ export function errorHandler(err: unknown, _req: Request, res: Response, _next: 
     res.status(400).json({ message })
     return
   }
+  if (err instanceof Prisma.PrismaClientValidationError) {
+    console.error('Prisma validation error:', err.message)
+    res.status(500).json({
+      message:
+        '데이터베이스 클라이언트가 최신이 아닙니다. 서버를 종료한 뒤 server 폴더에서 npm run db:generate 후 다시 시작해 주세요.',
+    })
+    return
+  }
   if (err instanceof Prisma.PrismaClientKnownRequestError) {
     console.error('Prisma error:', err.code, err.meta)
     if (err.code === 'P2003') {
