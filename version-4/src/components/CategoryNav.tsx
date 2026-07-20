@@ -4,7 +4,7 @@ import { sections } from "../data/sections";
 import { MastheadLinks } from "./MastheadBar";
 
 function navLinkClass(active: boolean) {
-  return `block truncate px-2 py-3 text-center text-xs font-bold tracking-tight transition lg:whitespace-nowrap lg:px-1 lg:py-1 lg:text-sm xl:px-3 ${
+  return `block whitespace-nowrap px-2 py-3 text-center text-xs font-bold tracking-tight transition lg:px-1.5 lg:py-2 lg:text-sm xl:px-2.5 ${
     active ? "bg-flash-600 text-white" : "text-paper-200 hover:bg-ink-800"
   }`;
 }
@@ -71,7 +71,7 @@ export default function CategoryNav({
     <>
       {/* Desktop unified bar */}
       <nav className="sticky top-0 z-30 hidden border-b border-ink-900/10 bg-ink-900 lg:block">
-        <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 xl:gap-6 xl:px-6 justify-center">
+        <div className="mx-auto flex max-w-6xl items-center justify-center gap-x-2 gap-y-2 px-3 py-1.5 xl:gap-x-3 xl:px-4">
           <Link to="/" className="shrink-0">
             <img
               src="/logo(white).png"
@@ -80,7 +80,7 @@ export default function CategoryNav({
             />
           </Link>
 
-          <ul className="flex overflow-x-auto scrollbar-hide">
+          <ul className="flex items-center justify-center">
             {sections.map((s) => (
               <li key={s.id} className="shrink-0">
                 <Link
@@ -102,12 +102,12 @@ export default function CategoryNav({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="뉴스 검색"
-              className="w-40 bg-transparent px-3 text-sm text-ink-900 outline-none placeholder:text-ink-300 min-w-25"
+              className="w-28 bg-transparent px-3 text-sm text-ink-900 outline-none placeholder:text-ink-300 xl:w-36"
             />
             <button
               type="submit"
               aria-label="검색"
-              className="cursor-pointer px-2  text-ink-700 hover:text-flash-600"
+              className="cursor-pointer px-2 text-ink-700 hover:text-flash-600"
             >
               🔍
             </button>
