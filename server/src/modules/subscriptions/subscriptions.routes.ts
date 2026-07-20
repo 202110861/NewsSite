@@ -18,12 +18,21 @@ subscriptionsRouter.get('/plans', async (_req, res, next) => {
   }
 })
 
+subscriptionsRouter.get('/config', async (_req, res, next) => {
+  try {
+    res.json(subscriptionsService.getPaymentConfig())
+  } catch (err) {
+    next(err)
+  }
+})
+
 subscriptionsRouter.post('/', authMiddleware, async (req: AuthRequest, res, next) => {
   try {
-    const { planId, phoneNumber } = startSubscriptionSchema.parse(req.body)
+    const { planId, payMethod, phoneNumber } = startSubscriptionSchema.parse(req.body)
     const result = await subscriptionsService.startSubscription(
       req.user!.id,
       planId,
+      payMethod,
       phoneNumber,
     )
     res.status(201).json(result)
@@ -50,7 +59,7 @@ subscriptionsRouter.post(
   },
 )
 
-/** Mock OTP 콜백 (PortOne 미설정 환경용) */
+/** Mock 결제 완료 (PAYMENT_MODE=mock) */
 subscriptionsRouter.post('/callback', authMiddleware, async (req: AuthRequest, res, next) => {
   try {
     const { paymentId, authCode } = callbackSchema.parse(req.body)
