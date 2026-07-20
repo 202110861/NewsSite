@@ -35,12 +35,26 @@ import { youtubeEmbedUrl } from "../utils/youtube";
 
 function renderBodyBlock(block: ArticleBodyBlock, key: number) {
   if (typeof block === "string") {
+    const lines = block.split("\n");
     return (
       <p
         key={key}
         className="whitespace-pre-line text-base leading-[1.85] text-ink-800"
       >
-        {block}
+        {lines.map((line, i) => {
+          const isHeading = line.trimStart().startsWith("■");
+          const content = isHeading ? (
+            <span className="text-lg font-bold">{line}</span>
+          ) : (
+            line
+          );
+          return (
+            <span key={i}>
+              {i > 0 ? "\n" : null}
+              {content}
+            </span>
+          );
+        })}
       </p>
     );
   }
@@ -347,6 +361,9 @@ export default function ArticleDetailPage() {
   const related = getRelatedArticles(allArticles, article);
   const { prev, next } = getAdjacentArticles(allArticles, article);
   const others = allArticles.filter((a) => a.id !== article.id);
+  const publisherNews = others
+    .filter((a) => a.section === "publisher")
+    .slice(0, 5);
   const latestNews = others.slice(0, 5);
   const popularNews = [...others]
     .sort((a, b) => (b.viewCount ?? 0) - (a.viewCount ?? 0))
@@ -675,17 +692,23 @@ export default function ArticleDetailPage() {
           </article>
 
           {!isEditing && (
-            <ArticleSideNews latest={latestNews} popular={popularNews} />
+            <ArticleSideNews
+              publisher={publisherNews}
+              latest={latestNews}
+              popular={popularNews}
+            />
           )}
         </div>
       </div>
 
       {!isEditing && related.length > 0 && (
-        <NewsCarousel
-          title={`${meta?.label ?? ""} 관련기사`}
-          articles={related}
-          moreHref={`/section/${article.section}`}
-        />
+        <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
+          <NewsCarousel
+            title={`${meta?.label ?? ""} 관련기사`}
+            articles={related}
+            moreHref={`/section/${article.section}`}
+          />
+        </div>
       )}
     </>
   );

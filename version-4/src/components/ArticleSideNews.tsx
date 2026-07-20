@@ -3,6 +3,7 @@ import type { Article } from "../types/news";
 import { resolveMediaUrl } from "../utils/media";
 
 interface ArticleSideNewsProps {
+  publisher: Article[];
   latest: Article[];
   popular: Article[];
 }
@@ -15,8 +16,30 @@ function SectionTitle({ children }: { children: string }) {
   );
 }
 
-/** 데스크탑 기사 상세 오른쪽 — 최신뉴스 · 인기뉴스 */
+function TitleList({ articles }: { articles: Article[] }) {
+  if (articles.length === 0) {
+    return <p className="py-4 text-xs text-ink-500">등록된 기사가 없습니다.</p>;
+  }
+
+  return (
+    <ul className="divide-y divide-ink-900/10">
+      {articles.map((article) => (
+        <li key={article.id}>
+          <Link
+            to={`/article/${article.id}`}
+            className="block py-2.5 text-sm leading-snug text-ink-800 hover:text-flash-700"
+          >
+            <span className="line-clamp-2">{article.title}</span>
+          </Link>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/** 데스크탑 기사 상세 오른쪽 — 발행인 칼럼 · 최신뉴스 · 인기뉴스 */
 export default function ArticleSideNews({
+  publisher,
   latest,
   popular,
 }: ArticleSideNewsProps) {
@@ -24,27 +47,17 @@ export default function ArticleSideNews({
 
   return (
     <aside
-      className="sticky top-24 hidden w-64 shrink-0 self-start xl:block"
+      className="sticky top-24 mt-7 hidden w-64 shrink-0 self-start xl:block"
       aria-label="관련 뉴스"
     >
       <section>
+        <SectionTitle>발행인 칼럼</SectionTitle>
+        <TitleList articles={publisher} />
+      </section>
+
+      <section className="mt-8">
         <SectionTitle>최신뉴스</SectionTitle>
-        {latest.length === 0 ? (
-          <p className="py-4 text-xs text-ink-500">등록된 기사가 없습니다.</p>
-        ) : (
-          <ul className="divide-y divide-ink-900/10">
-            {latest.map((article) => (
-              <li key={article.id}>
-                <Link
-                  to={`/article/${article.id}`}
-                  className="block py-2.5 text-sm leading-snug text-ink-800 hover:text-flash-700"
-                >
-                  <span className="line-clamp-2">{article.title}</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
+        <TitleList articles={latest} />
       </section>
 
       <section className="mt-8">
