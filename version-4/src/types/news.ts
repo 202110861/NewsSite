@@ -5,6 +5,7 @@ export type SectionId =
   | "culture"
   | "entertainment"
   | "local"
+  | "publisher"
   | "video"
   | "cardNews"
   | "shorts";

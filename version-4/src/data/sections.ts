@@ -13,6 +13,7 @@ export const sections: Section[] = [
   { id: "local", label: "지역뉴스", accent: "bg-section-local" },
   { id: "video", label: "영상뉴스", accent: "bg-section-video" },
   { id: "cardNews", label: "카드뉴스", accent: "bg-section-cardNews" },
+  { id: "publisher", label: "발행인칼럼", accent: "bg-section-publisher" },
   // { id: "shorts", label: "숏컷뉴스", accent: "bg-section-shorts" },
 ];
 
