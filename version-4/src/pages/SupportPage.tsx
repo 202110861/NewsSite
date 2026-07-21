@@ -12,6 +12,35 @@ import {
   type PayMethod,
   type SubscriptionPlan,
 } from '../lib/api'
+
+
+/** 결제 수단 브랜드 컬러 (배경 · 글자 · 테두리) */
+const PAY_METHOD_BRAND: Record<
+  DisplayPayMethod,
+  { bg: string; text: string; border: string; badge: string; selectedRing: string }
+> = {
+  PHONE: {
+    bg: 'bg-[#00A3E0]',
+    text: 'text-white',
+    border: 'border-[#0090C5]',
+    badge: 'text-white/80',
+    selectedRing: 'ring-2 ring-[#0077A8] ring-offset-2',
+  },
+  TOSS_PAY: {
+    bg: 'bg-[#0064FF]',
+    text: 'text-white',
+    border: 'border-[#0050CC]',
+    badge: 'text-white/80',
+    selectedRing: 'ring-2 ring-[#0047B3] ring-offset-2',
+  },
+  KAKAO_PAY: {
+    bg: 'bg-[#FEE500]',
+    text: 'text-[#191919]',
+    border: 'border-[#E5CF00]',
+    badge: 'text-[#191919]/70',
+    selectedRing: 'ring-2 ring-[#191919] ring-offset-2',
+  },
+}
 import { getApiErrorMessage } from '../lib/errors'
 import {
   // requestAccountBilling, // 추후: 케이뱅크·카카오뱅크

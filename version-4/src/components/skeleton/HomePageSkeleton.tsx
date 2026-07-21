@@ -85,7 +85,7 @@ export default function HomePageSkeleton() {
             <div className="mb-6 flex justify-center gap-6">
               <div className="flex min-w-0 flex-col">
                 <section className="mx-auto w-full min-w-0 max-w-6xl px-6 pt-6 sm:px-6">
-                  <Skeleton className="aspect-[16/9] w-full rounded-lg lg:aspect-[21/9]" />
+                  <Skeleton className="aspect-[16/9] w-full rounded-lg" />
                 </section>
 
                 <CarouselSkeleton />

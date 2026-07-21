@@ -98,6 +98,13 @@ export default function LoginPage() {
 
         <div className="mt-4 space-y-3">
           <a
+            href={`${API_BASE}/auth/kakao`}
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#FEE500] py-3 text-sm font-bold text-[#191919] hover:brightness-95"
+          >
+            <KakaoIcon />
+            카카오로 로그인
+          </a>
+          <a
             href={`${API_BASE}/auth/naver`}
             className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#03C75A] py-3 text-sm font-bold text-white hover:brightness-95"
           >
@@ -135,6 +142,17 @@ export default function LoginPage() {
         </Link>
       </p>
     </div>
+  );
+}
+
+function KakaoIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        fill="currentColor"
+        d="M12 3C6.477 3 2 6.582 2 11c0 2.856 1.87 5.364 4.683 6.78l-.95 3.49a.58.58 0 0 0 .894.626l4.165-2.76c.396.043.8.064 1.208.064 5.523 0 10-3.582 10-8.2s-4.477-8-10-8Z"
+      />
+    </svg>
   );
 }
 

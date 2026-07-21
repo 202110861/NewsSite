@@ -119,36 +119,29 @@ export default function HomePage() {
                 {/* <AdSlot slotKey="home_side_left" className="min-h-[480px]" /> */}
               </div>
             </aside>
-
-            <div className="flex min-w-0 w-full max-w-full flex-col">
-              <div className="mb-6 flex justify-center gap-6">
-                <div className="flex flex-col">
-                  <HeroHeadlines articles={heroArticles} />
-                  <NewsCarousel
-                    title="정치"
-                    articles={politicsArticles}
-                    moreHref="/section/politics"
-                  />
-                  <NewsCarousel
-                    title="연예/스포츠"
-                    articles={entertainmentArticles}
-                    moreHref="/section/entertainment"
-                  />
-                  <NewsCarousel
-                    title="영상뉴스"
-                    articles={videoArticles}
-                    moreHref="/section/video"
-                  />
-                  <NewsCarousel
-                    title="사회"
-                    articles={societyArticles}
-                    moreHref="/section/society"
-                  />
-                </div>
-                <ArticleSideNews
-                  publisher={publisherNews}
-                  latest={latestNews}
-                  popular={popularNews}
+          <div className="min-w-0  flex flex-col xl:w-[calc(100%-600px)]">
+            <div className="flex gap-6 mb-6 justify-center">
+              <div className="flex flex-col">
+                <HeroHeadlines articles={heroArticles} />
+                <NewsCarousel
+                  title="정치"
+                  articles={politicsArticles}
+                  moreHref="/section/politics"
+                />
+                <NewsCarousel
+                  title="연예/스포츠"
+                  articles={entertainmentArticles}
+                  moreHref="/section/entertainment"
+                />
+                <NewsCarousel
+                  title="영상뉴스"
+                  articles={videoArticles}
+                  moreHref="/section/video"
+                />
+                <NewsCarousel
+                  title="사회"
+                  articles={societyArticles}
+                  moreHref="/section/society"
                 />
               </div>
 

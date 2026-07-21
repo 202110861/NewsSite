@@ -14,10 +14,14 @@ function TitleListSkeleton({ count = 5 }: { count?: number }) {
 }
 
 /** 데스크탑 우측 — 발행인 칼럼 · 최신뉴스 · 인기뉴스 스켈레톤 */
-export default function ArticleSideNewsSkeleton() {
+export default function ArticleSideNewsSkeleton({
+  className = "mt-7",
+}: {
+  className?: string;
+}) {
   return (
     <aside
-      className="sticky top-24 mt-7 hidden w-64 shrink-0 self-start xl:block"
+      className={`sticky top-24 hidden w-64 shrink-0 self-start xl:block ${className}`}
       aria-hidden
     >
       <section>
@@ -33,7 +37,7 @@ export default function ArticleSideNewsSkeleton() {
       <section className="mt-8">
         <Skeleton className="h-9 w-full rounded-sm" />
         <div className="mt-3">
-          <Skeleton className="aspect-[4/3] w-full" />
+        <Skeleton className="aspect-4/3 w-full" />
           <Skeleton className="mt-2 h-4 w-full" />
           <Skeleton className="mt-1.5 h-4 w-3/4" />
           <ul className="mt-3 divide-y divide-ink-900/10 border-t border-ink-900/10">
