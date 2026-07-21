@@ -4,6 +4,7 @@ import { fetchArticles } from "../lib/articles";
 import { sectionMap } from "../data/sections";
 import SectionTag from "../components/SectionTag";
 import ArticleSideNews from "../components/ArticleSideNews";
+import SeoHead from "../components/SeoHead";
 import { SectionPageSkeleton } from "../components/skeleton";
 import { resolveMediaUrl } from "../utils/media";
 import type { Article } from "../types/news";
@@ -163,6 +164,7 @@ export default function SectionPage() {
           className="mt-0 xl:col-start-2 xl:row-start-2"
         />
       </div>
-    </section>
+      </section>
+    </>
   );
 }
