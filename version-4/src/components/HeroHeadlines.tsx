@@ -2,6 +2,7 @@ import {
   useEffect,
   useRef,
   useState,
+  type TransitionEvent as ReactTransitionEvent,
   type TouchEvent as ReactTouchEvent,
 } from "react";
 import { Link } from "react-router-dom";
@@ -67,7 +68,8 @@ export default function HeroHeadlines({ articles }: { articles: Article[] }) {
     goTo(index - 1);
   }
 
-  function handleTransitionEnd() {
+  function handleTransitionEnd(e: ReactTransitionEvent<HTMLAnchorElement>) {
+    if (e.target !== e.currentTarget || e.propertyName !== "transform") return;
     if (count <= 1 || index < count) return;
     // 복제 슬라이드 도착 → 실제 첫 장으로 점프 (애니메이션 없이)
     setAnimate(false);
@@ -110,14 +112,9 @@ export default function HeroHeadlines({ articles }: { articles: Article[] }) {
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
-      <div className="relative min-w-0 aspect-[16/9] w-full overflow-hidden rounded-lg bg-ink-950 lg:aspect-[21/9]">
+      <div className="relative min-w-0 aspect-video w-full overflow-hidden rounded-lg bg-ink-950">
         <div
-          className="flex h-full"
-          style={{
-            transform: `translateX(-${index * 100}%)`,
-            transition: animate ? "transform 500ms ease" : "none",
-          }}
-          onTransitionEnd={handleTransitionEnd}
+          className="relative h-full w-full"
           onTouchStart={onTouchStart}
           onTouchEnd={onTouchEnd}
         >
@@ -125,7 +122,14 @@ export default function HeroHeadlines({ articles }: { articles: Article[] }) {
             <Link
               key={`${article.id}-${i}`}
               to={`/article/${article.id}`}
-              className="group relative block h-full min-w-full shrink-0 overflow-hidden"
+              className="group absolute inset-0 block h-full w-full overflow-hidden"
+              style={{
+                transform: `translate3d(${(i - index) * 100}%, 0, 0)`,
+                transition: animate ? "transform 500ms ease" : "none",
+              }}
+              onTransitionEnd={
+                i === count ? handleTransitionEnd : undefined
+              }
               draggable={false}
               onClick={(e) => {
                 if (suppressClick.current) {
@@ -134,11 +138,11 @@ export default function HeroHeadlines({ articles }: { articles: Article[] }) {
                 }
               }}
             >
-              <div className="relative h-full w-full">
+              <div className="relative h-full w-full flex justify-center">
                 <img
                   src={resolveMediaUrl(article.image ?? "")}
                   alt=""
-                  className="absolute inset-0 h-full w-full object-cover opacity-90 transition duration-500 group-hover:scale-105 group-hover:opacity-100"
+                  className="inset-0 h-full w-full object-cover opacity-90 transition duration-500 group-hover:scale-105 group-hover:opacity-100"
                   loading={i === 0 ? "eager" : "lazy"}
                   draggable={false}
                 />
