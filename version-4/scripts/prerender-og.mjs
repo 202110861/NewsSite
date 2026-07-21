@@ -90,6 +90,8 @@ function stripSeoTags(html) {
   return html
     .replace(/<title>[\s\S]*?<\/title>\s*/i, '')
     .replace(/<meta\s+name="description"[\s\S]*?>\s*/gi, '')
+    .replace(/<meta\s+name="robots"[\s\S]*?>\s*/gi, '')
+    .replace(/<link\s+rel="canonical"[\s\S]*?>\s*/gi, '')
     .replace(/<meta\s+property="og:[^"]+"[\s\S]*?>\s*/gi, '')
     .replace(/<meta\s+name="twitter:[^"]+"[\s\S]*?>\s*/gi, '')
 }
@@ -100,6 +102,8 @@ function buildSeoTags(meta) {
   return `
     <title>${escapeHtml(meta.title)}</title>
     <meta name="description" content="${escapeHtml(meta.description)}" />
+    <link rel="canonical" href="${escapeHtml(meta.url)}" />
+    <meta name="robots" content="index, follow" />
     <meta property="og:type" content="${type}" />
     <meta property="og:site_name" content="${SITE_NAME}" />
     <meta property="og:title" content="${escapeHtml(meta.title)}" />
@@ -112,6 +116,82 @@ function buildSeoTags(meta) {
     <meta name="twitter:title" content="${escapeHtml(meta.title)}" />
     <meta name="twitter:description" content="${escapeHtml(meta.description)}" />
     <meta name="twitter:image" content="${escapeHtml(meta.image)}" />`
+}
+
+function escapeXml(value) {
+  return String(value)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&apos;')
+}
+
+function toLastmod(value) {
+  if (!value) return undefined
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return undefined
+  return date.toISOString().slice(0, 10)
+}
+
+function buildSitemapXml(entries) {
+  const body = entries
+    .map((entry) => {
+      const lines = [`    <loc>${escapeXml(entry.loc)}</loc>`]
+      if (entry.lastmod) lines.push(`    <lastmod>${entry.lastmod}</lastmod>`)
+      if (entry.changefreq) {
+        lines.push(`    <changefreq>${entry.changefreq}</changefreq>`)
+      }
+      if (entry.priority) lines.push(`    <priority>${entry.priority}</priority>`)
+      return `  <url>\n${lines.join('\n')}\n  </url>`
+    })
+    .join('\n')
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${body}
+</urlset>
+`
+}
+
+function writeSitemap(outDir, siteUrl, articles, sections) {
+  const entries = [
+    {
+      loc: `${siteUrl}/`,
+      changefreq: 'hourly',
+      priority: '1.0',
+      lastmod: toLastmod(articles[0]?.publishedAt ?? articles[0]?.updatedAt),
+    },
+  ]
+
+  for (const section of sections) {
+    entries.push({
+      loc: `${siteUrl}/section/${section.id}`,
+      changefreq: 'daily',
+      priority: '0.8',
+    })
+  }
+
+  for (const policy of ['youth', 'personal', 'terms']) {
+    entries.push({
+      loc: `${siteUrl}/policy/${policy}`,
+      changefreq: 'monthly',
+      priority: '0.3',
+    })
+  }
+
+  for (const article of articles) {
+    entries.push({
+      loc: `${siteUrl}/article/${article.id}`,
+      lastmod: toLastmod(article.publishedAt ?? article.updatedAt),
+      changefreq: 'weekly',
+      priority: '0.7',
+    })
+  }
+
+  const sitemapPath = path.join(outDir, 'sitemap.xml')
+  fs.writeFileSync(sitemapPath, buildSitemapXml(entries))
+  return entries.length
 }
 
 function injectMeta(html, meta) {
@@ -251,9 +331,12 @@ async function main() {
     )
   }
 
+  const sitemapCount = writeSitemap(outDir, siteUrl, articles, sections)
+
   console.log(
     `[prerender-og] ${articles.length} articles + ${sections.length} sections + home (site: ${siteUrl})`,
   )
+  console.log(`[prerender-og] sitemap.xml (${sitemapCount} urls)`)
 }
 
 main().catch((error) => {
