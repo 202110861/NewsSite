@@ -69,6 +69,10 @@ export default function Footer() {
                   이용약관 |
                 </Link>
               </p>
+              <br />
+              <p className="text-paper-200/70 [&>span]:shrink-0">
+                Copyright © 2026 경제인뉴스. All rights reserved.
+              </p>
             </div>
 
             <nav className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-paper-200/80">
