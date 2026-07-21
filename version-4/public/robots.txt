@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+
+Disallow: /login
+Disallow: /signup
+Disallow: /mypage
+Disallow: /admin/
+Disallow: /support
+Disallow: /auth/
+Disallow: /search
+
+Sitemap: https://newsin.kr/sitemap.xml

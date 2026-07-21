@@ -180,9 +180,11 @@ export const PAY_METHOD_ROWS = [
   ["PHONE", "TOSS_PAY", "KAKAO_PAY"],
 ] as const satisfies readonly (readonly PayMethod[])[];
 
+
 export const DISPLAY_PAY_METHODS = PAY_METHOD_ROWS.flat() as readonly PayMethod[];
 
 export type DisplayPayMethod = (typeof DISPLAY_PAY_METHODS)[number];
+
 export type ActivePayMethod = (typeof ACTIVE_PAY_METHODS)[number];
 export type ComingSoonPayMethod = (typeof COMING_SOON_PAY_METHODS)[number];
 

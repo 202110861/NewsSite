@@ -4,6 +4,7 @@ import HeroHeadlines from "../components/HeroHeadlines";
 import NewsCarousel from "../components/NewsCarousel";
 import SectionNewsGrid from "../components/SectionNewsGrid";
 import ArticleSideNews from "../components/ArticleSideNews";
+import SeoHead from "../components/SeoHead";
 import { HomePageSkeleton } from "../components/skeleton";
 import { fetchArticles } from "../lib/articles";
 import type { Article } from "../types/news";
@@ -92,26 +93,32 @@ export default function HomePage() {
   }, []);
 
   if (loading) {
-    return <HomePageSkeleton />;
+    return (
+      <>
+        <SeoHead path="/" />
+        <HomePageSkeleton />
+      </>
+    );
   }
 
   return (
-    <div className="mx-auto flex w-full min-w-0 justify-center gap-4">
-      <div className="min-w-0 flex-1">
-        <HotIssueTicker
-          items={heroArticles.map((article) => ({
-            id: article.id,
-            title: article.title,
-          }))}
-        />
+    <>
+      <SeoHead path="/" />
+      <div className="mx-auto flex w-full min-w-0 justify-center gap-4">
+        <div className="min-w-0 flex-1">
+          <HotIssueTicker
+            items={heroArticles.map((article) => ({
+              id: article.id,
+              title: article.title,
+            }))}
+          />
 
-        <div className="flex min-w-0 justify-center gap-4">
-          <aside className="hidden w-40 shrink-0 sm:my-6 lg:block">
-            <div className="sticky top-4">
-              {/* <AdSlot slotKey="home_side_left" className="min-h-[480px]" /> */}
-            </div>
-          </aside>
-
+          <div className="flex min-w-0 justify-center gap-4">
+            <aside className="hidden w-40 shrink-0 sm:my-6 lg:block">
+              <div className="sticky top-4">
+                {/* <AdSlot slotKey="home_side_left" className="min-h-[480px]" /> */}
+              </div>
+            </aside>
           <div className="min-w-0  flex flex-col xl:w-[calc(100%-600px)]">
             <div className="flex gap-6 mb-6 justify-center">
               <div className="flex flex-col">
@@ -137,23 +144,18 @@ export default function HomePage() {
                   moreHref="/section/society"
                 />
               </div>
-              <ArticleSideNews
-                publisher={publisherNews}
-                latest={latestNews}
-                popular={popularNews}
-              />
+
+              <SectionNewsGrid data={allSectionArticles} />
             </div>
 
-            <SectionNewsGrid data={allSectionArticles} />
+            <aside className="hidden w-40 shrink-0 sm:my-6 lg:block">
+              <div className="sticky top-4">
+                {/* <AdSlot slotKey="home_side_right" className="min-h-[480px]" /> */}
+              </div>
+            </aside>
           </div>
-
-          <aside className="hidden w-40 shrink-0 sm:my-6 lg:block">
-            <div className="sticky top-4">
-              {/* <AdSlot slotKey="home_side_right" className="min-h-[480px]" /> */}
-            </div>
-          </aside>
         </div>
       </div>
-    </div>
+    </>
   );
 }

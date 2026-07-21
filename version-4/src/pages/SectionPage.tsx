@@ -66,19 +66,33 @@ export default function SectionPage() {
   }
 
   if (loading) {
-    return <SectionPageSkeleton label={meta.label} />;
+    return (
+      <>
+        <SeoHead
+          title={`${meta.label} - 경제인뉴스`}
+          description={`${meta.label} 섹션 최신 뉴스를 확인하세요.`}
+          path={`/section/${sectionId}`}
+        />
+        <SectionPageSkeleton label={meta.label} />
+      </>
+    );
   }
 
   return (
-    <section className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
-      <nav className="mb-4 flex items-center gap-1.5 text-xs text-ink-500">
-        <Link to="/" className="hover:text-flash-600">
-          홈
-        </Link>
-        <span>›</span>
-        <span>{meta.label}</span>
-      </nav>
-
+    <>
+      <SeoHead
+        title={`${meta.label} - 경제인뉴스`}
+        description={`${meta.label} 섹션 최신 뉴스를 확인하세요.`}
+        path={`/section/${sectionId}`}
+      />
+      <section className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
+        <nav className="mb-4 flex items-center gap-1.5 text-xs text-ink-500">
+          <Link to="/" className="hover:text-flash-600">
+            홈
+          </Link>
+          <span>›</span>
+          <span>{meta.label}</span>
+        </nav>
       <div className="grid min-w-0 xl:grid-cols-[minmax(0,1fr)_16rem] xl:gap-x-6">
         <div className="flex items-baseline justify-between border-b-2 border-ink-900 pb-3 xl:col-start-1">
           <h1 className="font-display text-2xl font-black tracking-tight text-ink-900 sm:text-3xl">
@@ -86,7 +100,6 @@ export default function SectionPage() {
           </h1>
           <span className="text-sm text-ink-500">총 {articles.length}건</span>
         </div>
-
         <div className="min-w-0 pt-6 xl:col-start-1 xl:row-start-2">
           {articles.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-2 rounded-lg bg-paper-100 py-20 text-center">

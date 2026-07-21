@@ -61,6 +61,8 @@ function stripSeoTags(html: string): string {
   return html
     .replace(/<title>[\s\S]*?<\/title>\s*/i, "")
     .replace(/<meta\s+name="description"[\s\S]*?>\s*/gi, "")
+    .replace(/<meta\s+name="robots"[\s\S]*?>\s*/gi, "")
+    .replace(/<link\s+rel="canonical"[\s\S]*?>\s*/gi, "")
     .replace(/<meta\s+property="og:[^"]+"[\s\S]*?>\s*/gi, "")
     .replace(/<meta\s+name="twitter:[^"]+"[\s\S]*?>\s*/gi, "");
 }
@@ -71,6 +73,8 @@ function buildSeoTags(meta: PageMeta): string {
   return `
     <title>${escapeHtml(meta.title)}</title>
     <meta name="description" content="${escapeHtml(meta.description)}" />
+    <link rel="canonical" href="${escapeHtml(meta.url)}" />
+    <meta name="robots" content="index, follow" />
     <meta property="og:type" content="${type}" />
     <meta property="og:site_name" content="${SITE_NAME}" />
     <meta property="og:title" content="${escapeHtml(meta.title)}" />

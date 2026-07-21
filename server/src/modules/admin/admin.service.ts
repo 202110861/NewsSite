@@ -15,6 +15,7 @@ import {
   publishArticlePage,
   unpublishArticlePage,
 } from "../../services/articlePagePublisher.js";
+import { publishSitemap } from "../../services/sitemapPublisher.js";
 import {
   adminCreateArticleSchema,
   adminUpdateArticleSchema,
@@ -40,6 +41,14 @@ async function syncPublishedArticlePage(
       `[articlePagePublisher] article ${article.id} S3 동기화 실패:`,
       err,
     );
+  }
+}
+
+async function syncSitemap(): Promise<void> {
+  try {
+    await publishSitemap();
+  } catch (err) {
+    console.error("[sitemapPublisher] sitemap 동기화 실패:", err);
   }
 }
 
@@ -134,6 +143,7 @@ export async function updateAdminArticle(
 
   if (updated.status === "PUBLISHED") {
     await syncPublishedArticlePage(updated);
+    await syncSitemap();
   }
 
   return toAdminArticle(updated);
@@ -151,6 +161,7 @@ export async function approveArticle(id: string) {
   });
 
   await syncPublishedArticlePage(article);
+  await syncSitemap();
   return toFrontendArticle(article);
 }
 
@@ -160,6 +171,16 @@ export async function rejectArticle(id: string, reason: string) {
     data: { status: "REJECTED", rejectedReason: reason },
     include: articleInclude,
   });
+
+  try {
+    await unpublishArticlePage(id);
+  } catch (err) {
+    console.error(
+      `[articlePagePublisher] article ${id} S3 삭제 실패:`,
+      err,
+    );
+  }
+  await syncSitemap();
   return toAdminArticle(article);
 }
 
@@ -173,6 +194,7 @@ export async function deleteArticle(id: string) {
       err,
     );
   }
+  await syncSitemap();
 }
 
 export async function bulkDeleteArticles(ids: string[]) {
@@ -189,6 +211,7 @@ export async function bulkDeleteArticles(ids: string[]) {
       }
     }),
   );
+  await syncSitemap();
 }
 
 export async function getDashboardStats() {
