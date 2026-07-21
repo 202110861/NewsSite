@@ -24,7 +24,7 @@ export default function NewsCarousel({ title, articles, moreHref }: Props) {
   if (articles.length === 0) return null;
 
   return (
-    <section className="mx-auto w-full min-w-0 max-w-6xl px-6 py-7">
+    <section className="mx-auto w-full min-w-0 max-w-6xl px-6 py-3">
       <div className="mb-4 flex items-baseline justify-between border-b-2 border-ink-900 px-4 pb-2.5 sm:px-6">
         <h2 className="font-display text-lg font-black tracking-tight text-ink-900 sm:text-xl">
           {title}
