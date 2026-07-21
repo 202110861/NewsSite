@@ -150,6 +150,69 @@ export interface SubscriptionPlan {
   label: string;
 }
 
+export interface PaymentConfig {
+  paymentMode: "mock" | "portone_test" | "portone_live";
+  kakaoTestUsesZeroAmount: boolean;
+  accountTestUsesZeroAmount: boolean;
+  webhookUrl?: string;
+}
+
+export type PayMethod =
+  | "PHONE"
+  | "KAKAO_PAY"
+  | "NAVER_PAY"
+  | "TOSS_PAY"
+  | "K_BANK"
+  | "KAKAO_BANK";
+
+/** 실제 결제 API 허용 수단 (실연동 오픈 전까지 비활성 — UI만 노출) */
+export const ACTIVE_PAY_METHODS = [] as const satisfies readonly PayMethod[];
+
+/** 화면에 보이지만 결제 불가(심사·연동 중) */
+export const COMING_SOON_PAY_METHODS = [
+  "PHONE",
+  "TOSS_PAY",
+  "KAKAO_PAY",
+] as const satisfies readonly PayMethod[];
+
+/** 결제 수단 UI 배치 (가로 1행) */
+export const PAY_METHOD_ROWS = [
+  ["PHONE", "TOSS_PAY", "KAKAO_PAY"],
+] as const satisfies readonly (readonly PayMethod[])[];
+
+export const DISPLAY_PAY_METHODS = PAY_METHOD_ROWS.flat() as readonly PayMethod[];
+
+export type DisplayPayMethod = (typeof DISPLAY_PAY_METHODS)[number];
+export type ActivePayMethod = (typeof ACTIVE_PAY_METHODS)[number];
+export type ComingSoonPayMethod = (typeof COMING_SOON_PAY_METHODS)[number];
+
+export const PAY_METHOD_LABELS: Record<PayMethod, string> = {
+  PHONE: "휴대폰 소액결제",
+  KAKAO_PAY: "카카오페이",
+  NAVER_PAY: "네이버페이",
+  TOSS_PAY: "토스페이",
+  K_BANK: "케이뱅크",
+  KAKAO_BANK: "카카오뱅크",
+};
+
+export const PAY_METHOD_COMING_SOON_MESSAGE: Record<
+  ComingSoonPayMethod,
+  string
+> = {
+  PHONE:
+    "휴대폰 소액결제는 현재 PG 심사·연동 중입니다. 오픈 후 이용하실 수 있습니다.",
+  TOSS_PAY:
+    "토스페이는 현재 가맹점 심사·연동 중입니다. 오픈 후 이용하실 수 있습니다.",
+  KAKAO_PAY:
+    "카카오페이는 현재 가맹점 심사·연동 중입니다. 오픈 후 이용하실 수 있습니다.",
+};
+
+export function isComingSoonPayMethod(
+  method: PayMethod,
+): method is ComingSoonPayMethod {
+  return (COMING_SOON_PAY_METHODS as readonly string[]).includes(method);
+}
+
 export interface Advertisement {
   id: string;
   slotId: string;

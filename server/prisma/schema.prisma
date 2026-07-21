@@ -44,6 +44,15 @@ enum PaymentStatus {
   PENDING
 }
 
+enum PayMethod {
+  PHONE
+  KAKAO_PAY
+  NAVER_PAY
+  TOSS_PAY
+  K_BANK
+  KAKAO_BANK
+}
+
 model User {
   id            String         @id @default(uuid())
   username      String         @unique
@@ -169,9 +178,10 @@ model Subscription {
   id          String             @id @default(uuid())
   userId      String
   planId      String
+  payMethod   PayMethod          @default(PHONE)
   status      SubscriptionStatus @default(ACTIVE)
   billingKey  String?
-  phoneNumber String
+  phoneNumber String             @default("")
   startedAt   DateTime           @default(now())
   cancelledAt DateTime?
   createdAt   DateTime           @default(now())

@@ -32,10 +32,31 @@ const envSchema = z.object({
   PORTONE_API_KEY: z.string().optional(),
   PORTONE_API_SECRET: z.string().optional(),
   PORTONE_CHANNEL_KEY: z.string().optional(),
+  PORTONE_PHONE_CHANNEL_KEY: z.string().optional(),
+  PORTONE_KAKAO_CHANNEL_KEY: z.string().optional(),
+  PORTONE_NAVER_CHANNEL_KEY: z.string().optional(),
+  PORTONE_TOSS_CHANNEL_KEY: z.string().optional(),
+  PORTONE_ACCOUNT_CHANNEL_KEY: z.string().optional(),
   PORTONE_PG: z.string().default('danal'),
+  PORTONE_KAKAO_PG: z.string().default('kakaopay.TCSUBSCRIP'),
+  PORTONE_NAVER_PG: z.string().default('naverpay'),
+  PORTONE_TOSS_PG: z.string().default('tosspay_v2'),
+  PORTONE_ACCOUNT_PG: z.string().default('settle_acc'),
+  PAYMENT_MODE: z
+    .enum(['mock', 'portone_test', 'portone_live'])
+    .default('mock'),
 })
 
 export const env = envSchema.parse(process.env)
+
+export function isPaymentMockMode(): boolean {
+  return env.PAYMENT_MODE === 'mock'
+}
+
+export function getPaymentWebhookUrl(): string | undefined {
+  if (!env.API_PUBLIC_URL) return undefined
+  return `${env.API_PUBLIC_URL.replace(/\/$/, '')}/api/payments/webhook`
+}
 
 export function requireNaverOAuth() {
   const { NAVER_CLIENT_ID, NAVER_CLIENT_SECRET, NAVER_REDIRECT_URI } = env
