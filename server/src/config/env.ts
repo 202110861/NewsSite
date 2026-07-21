@@ -25,6 +25,9 @@ const envSchema = z.object({
   FACEBOOK_APP_ID: z.string().optional(),
   FACEBOOK_APP_SECRET: z.string().optional(),
   FACEBOOK_REDIRECT_URI: z.string().url().optional(),
+  KAKAO_CLIENT_ID: z.string().optional(),
+  KAKAO_CLIENT_SECRET: z.string().optional(),
+  KAKAO_REDIRECT_URI: z.string().url().optional(),
   PORTONE_IMP_CODE: z.string().optional(),
   PORTONE_API_KEY: z.string().optional(),
   PORTONE_API_SECRET: z.string().optional(),
@@ -67,6 +70,18 @@ export function requireFacebookOAuth() {
     appId: FACEBOOK_APP_ID,
     appSecret: FACEBOOK_APP_SECRET,
     redirectUri: FACEBOOK_REDIRECT_URI,
+  }
+}
+
+export function requireKakaoOAuth() {
+  const { KAKAO_CLIENT_ID, KAKAO_CLIENT_SECRET, KAKAO_REDIRECT_URI } = env
+  if (!KAKAO_CLIENT_ID || !KAKAO_REDIRECT_URI) {
+    throw new AppError(503, '카카오 로그인이 아직 설정되지 않았습니다.')
+  }
+  return {
+    clientId: KAKAO_CLIENT_ID,
+    clientSecret: KAKAO_CLIENT_SECRET,
+    redirectUri: KAKAO_REDIRECT_URI,
   }
 }
 

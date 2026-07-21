@@ -4,6 +4,7 @@ import { prisma } from '../../db/client.js'
 import {
   requireFacebookOAuth,
   requireGoogleOAuth,
+  requireKakaoOAuth,
   requireNaverOAuth,
 } from '../../config/env.js'
 import { AppError } from '../../middlewares/errorHandler.middleware.js'
@@ -134,6 +135,17 @@ export function getFacebookAuthorizeUrl(state: string) {
     scope: 'email,public_profile',
   })
   return `https://www.facebook.com/v21.0/dialog/oauth?${params.toString()}`
+}
+
+export function getKakaoAuthorizeUrl(state: string) {
+  const { clientId, redirectUri } = requireKakaoOAuth()
+  const params = new URLSearchParams({
+    response_type: 'code',
+    client_id: clientId,
+    redirect_uri: redirectUri,
+    state,
+  })
+  return `https://kauth.kakao.com/oauth/authorize?${params.toString()}`
 }
 
 export async function completeNaverLogin(code: string) {
@@ -297,6 +309,68 @@ export async function completeFacebookLogin(code: string) {
   return findOrCreateOAuthUser({
     provider: 'FACEBOOK',
     providerUserId: profile.id,
+    usernameHint,
+  })
+}
+
+export async function completeKakaoLogin(code: string) {
+  const { clientId, clientSecret, redirectUri } = requireKakaoOAuth()
+  const tokenParams = new URLSearchParams({
+    grant_type: 'authorization_code',
+    client_id: clientId,
+    redirect_uri: redirectUri,
+    code,
+  })
+  if (clientSecret) tokenParams.set('client_secret', clientSecret)
+
+  const tokenRes = await fetch('https://kauth.kakao.com/oauth/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8' },
+    body: tokenParams,
+  })
+  const tokenBody = (await tokenRes.json()) as {
+    access_token?: string
+    error?: string
+    error_description?: string
+  }
+
+  if (!tokenRes.ok || !tokenBody.access_token) {
+    throw new AppError(
+      401,
+      tokenBody.error_description ?? '카카오 토큰 발급에 실패했습니다.',
+    )
+  }
+
+  const profileRes = await fetch('https://kapi.kakao.com/v2/user/me', {
+    headers: {
+      Authorization: `Bearer ${tokenBody.access_token}`,
+      'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8',
+    },
+  })
+  const profile = (await profileRes.json()) as {
+    id?: number
+    properties?: { nickname?: string }
+    kakao_account?: {
+      email?: string
+      profile?: { nickname?: string }
+    }
+    msg?: string
+  }
+
+  if (!profileRes.ok || profile.id === undefined) {
+    throw new AppError(401, profile.msg ?? '카카오 사용자 정보를 가져오지 못했습니다.')
+  }
+
+  const providerUserId = String(profile.id)
+  const usernameHint =
+    profile.kakao_account?.profile?.nickname ||
+    profile.properties?.nickname ||
+    profile.kakao_account?.email?.split('@')[0] ||
+    `kakao_${providerUserId.slice(0, 8)}`
+
+  return findOrCreateOAuthUser({
+    provider: 'KAKAO' as AuthProvider,
+    providerUserId,
     usernameHint,
   })
 }

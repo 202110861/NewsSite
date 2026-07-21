@@ -10,11 +10,19 @@ import { checkUsernameSchema, loginSchema, signupSchema } from './auth.validatio
 const REFRESH_COOKIE = 'refreshToken'
 const OAUTH_STATE_COOKIE = oauthService.OAUTH_STATE_COOKIE
 
+function getAuthCookiePolicy() {
+  const secure =
+    env.NODE_ENV === 'production' || new URL(env.CLIENT_URL).protocol === 'https:'
+  return {
+    secure,
+    sameSite: secure ? ('none' as const) : ('lax' as const),
+  }
+}
+
 function setRefreshCookie(res: import('express').Response, token: string) {
   res.cookie(REFRESH_COOKIE, token, {
     httpOnly: true,
-    secure: env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    ...getAuthCookiePolicy(),
     maxAge: 14 * 24 * 60 * 60 * 1000,
     path: '/api/auth',
   })
@@ -23,8 +31,7 @@ function setRefreshCookie(res: import('express').Response, token: string) {
 function setOAuthStateCookie(res: import('express').Response, state: string) {
   res.cookie(OAUTH_STATE_COOKIE, oauthService.hashState(state), {
     httpOnly: true,
-    secure: env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    ...getAuthCookiePolicy(),
     maxAge: 10 * 60 * 1000,
     path: '/api/auth',
   })
@@ -111,6 +118,31 @@ authRouter.post('/logout', async (req, res, next) => {
     res.json({ message: '로그아웃되었습니다.' })
   } catch (err) {
     next(err)
+  }
+})
+
+authRouter.get('/kakao', (_req, res, next) => {
+  try {
+    const state = oauthService.createOAuthState()
+    setOAuthStateCookie(res, state)
+    res.redirect(oauthService.getKakaoAuthorizeUrl(state))
+  } catch (err) {
+    next(err)
+  }
+})
+
+authRouter.get('/kakao/callback', async (req, res) => {
+  try {
+    const code = typeof req.query.code === 'string' ? req.query.code : undefined
+    const state = typeof req.query.state === 'string' ? req.query.state : undefined
+    if (!code) throw new AppError(400, '카카오 인증 코드가 없습니다.')
+    assertOAuthState(req, state)
+    const result = await oauthService.completeKakaoLogin(code)
+    finishOAuthLogin(res, result)
+  } catch (err) {
+    const message =
+      err instanceof AppError ? err.message : '카카오 로그인에 실패했습니다.'
+    redirectOAuthError(res, message)
   }
 })
 
