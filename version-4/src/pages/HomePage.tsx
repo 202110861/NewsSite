@@ -112,7 +112,7 @@ export default function HomePage() {
             </div>
           </aside>
 
-          <div className="min-w-0 w-full max-w-full flex flex-col ">
+          <div className="min-w-0  flex flex-col xl:w-[calc(100%-600px)]">
             <div className="flex gap-6 mb-6 justify-center">
               <div className="flex flex-col">
                 <HeroHeadlines articles={heroArticles} />

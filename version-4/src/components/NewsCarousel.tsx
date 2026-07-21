@@ -54,7 +54,7 @@ export default function NewsCarousel({ title, articles, moreHref }: Props) {
                 <img
                   src={resolveMediaUrl(a.image ?? "")}
                   alt=""
-                  className="aspect-4/3 w-full object-cover transition duration-500 group-hover:scale-105"
+                  className="aspect-4/3 w-full transition duration-500 group-hover:scale-105"
                   loading="lazy"
                 />
                 {a.isVideo && (
