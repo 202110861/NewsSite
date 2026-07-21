@@ -17,18 +17,18 @@ export { OAUTH_STATE_COOKIE }
 function sanitizeUsernameBase(raw: string) {
   const cleaned = raw
     .toLowerCase()
-    .replace(/[^a-z0-9_]/g, '_')
+    .replace(/[^\p{L}\p{N}_]/gu, '_')
     .replace(/_+/g, '_')
     .replace(/^_|_$/g, '')
-  return (cleaned || 'user').slice(0, 20)
+  return Array.from(cleaned || 'user').slice(0, 20).join('')
 }
 
-async function uniqueUsername(base: string) {
+async function uniqueUsername(base: string, currentUserId?: string) {
   const root = sanitizeUsernameBase(base)
   for (let i = 0; i < 8; i += 1) {
     const candidate = i === 0 ? root : `${root}_${randomBytes(2).toString('hex')}`
     const existing = await prisma.user.findUnique({ where: { username: candidate } })
-    if (!existing) return candidate
+    if (!existing || existing.id === currentUserId) return candidate
   }
   return `${root}_${randomBytes(4).toString('hex')}`
 }
@@ -60,6 +60,7 @@ async function findOrCreateOAuthUser(input: {
   provider: AuthProvider
   providerUserId: string
   usernameHint: string
+  syncUsername?: boolean
 }) {
   const existing = await prisma.oAuthAccount.findUnique({
     where: {
@@ -72,7 +73,17 @@ async function findOrCreateOAuthUser(input: {
   })
 
   if (existing) {
-    return issueSession(existing.user)
+    let user = existing.user
+    if (input.syncUsername) {
+      const username = await uniqueUsername(input.usernameHint, user.id)
+      if (username !== user.username) {
+        user = await prisma.user.update({
+          where: { id: user.id },
+          data: { username },
+        })
+      }
+    }
+    return issueSession(user)
   }
 
   const username = await uniqueUsername(input.usernameHint)
@@ -144,6 +155,7 @@ export function getKakaoAuthorizeUrl(state: string) {
     client_id: clientId,
     redirect_uri: redirectUri,
     state,
+    scope: 'profile_nickname',
   })
   return `https://kauth.kakao.com/oauth/authorize?${params.toString()}`
 }
@@ -372,5 +384,6 @@ export async function completeKakaoLogin(code: string) {
     provider: 'KAKAO' as AuthProvider,
     providerUserId,
     usernameHint,
+    syncUsername: true,
   })
 }
