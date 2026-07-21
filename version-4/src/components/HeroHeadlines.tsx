@@ -108,7 +108,7 @@ export default function HeroHeadlines({ articles }: { articles: Article[] }) {
 
   return (
     <section
-      className="mx-auto w-full min-w-0 max-w-6xl px-6 pt-6 sm:px-6"
+      className="mx-auto w-full min-w-0 max-w-6xl px-6 py-6 sm:px-6"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
@@ -127,9 +127,7 @@ export default function HeroHeadlines({ articles }: { articles: Article[] }) {
                 transform: `translate3d(${(i - index) * 100}%, 0, 0)`,
                 transition: animate ? "transform 500ms ease" : "none",
               }}
-              onTransitionEnd={
-                i === count ? handleTransitionEnd : undefined
-              }
+              onTransitionEnd={i === count ? handleTransitionEnd : undefined}
               draggable={false}
               onClick={(e) => {
                 if (suppressClick.current) {
