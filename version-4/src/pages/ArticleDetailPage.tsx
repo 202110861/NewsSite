@@ -29,7 +29,7 @@ import {
   type EditableBlock,
 } from "../utils/articleBlocks";
 import type { Article, ArticleBodyBlock, SectionId } from "../types/news";
-import { Helmet } from "react-helmet-async";
+import SeoHead from "../components/SeoHead";
 
 import { youtubeEmbedUrl } from "../utils/youtube";
 
@@ -368,26 +368,17 @@ export default function ArticleDetailPage() {
   const popularNews = [...others]
     .sort((a, b) => (b.viewCount ?? 0) - (a.viewCount ?? 0))
     .slice(0, 5);
-  const pageUrl =
-    import.meta.env.VITE_SITE_URL?.replace(/\/$/, "") ||
-    (typeof window !== "undefined"
-      ? window.location.origin
-      : "https://newsin.kr");
-
   return (
     <>
-      <Helmet>
-        <title>{article.title} - 경제인뉴스</title>
-        <meta property="og:title" content={article.title} />
-        <meta property="og:description" content={article.excerpt} />
-        <meta
-          property="og:image"
-          content={
-            article.image ? resolveAbsoluteMediaUrl(article.image) : undefined
-          }
-        />
-        <meta property="og:url" content={`${pageUrl}/article/${article.id}`} />
-      </Helmet>
+      <SeoHead
+        title={`${article.title} - 경제인뉴스`}
+        description={article.excerpt?.trim() || article.title}
+        path={`/article/${article.id}`}
+        image={
+          article.image ? resolveAbsoluteMediaUrl(article.image) : undefined
+        }
+        type="article"
+      />
 
       <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
         <header>
