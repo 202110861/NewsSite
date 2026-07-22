@@ -124,6 +124,13 @@ export default function HomePage() {
               <div className="mb-6 flex min-w-0 justify-center gap-1">
                 <div className="flex min-w-0 flex-1 flex-col">
                   <HeroHeadlines articles={heroArticles} />
+                  <div className="md:hidden">
+                    <NewsCarousel
+                      title="발행인칼럼"
+                      articles={publisherNews}
+                      moreHref="/section/publisher"
+                    />
+                  </div>
                   <NewsCarousel
                     title="정치"
                     articles={politicsArticles}
