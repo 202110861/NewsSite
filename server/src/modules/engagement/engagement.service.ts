@@ -88,6 +88,54 @@ export async function createComment(
   };
 }
 
+async function getOwnedComment(articleId: string, commentId: string, userId: string) {
+  await assertPublishedArticle(articleId);
+
+  const comment = await prisma.comment.findFirst({
+    where: { id: commentId, articleId },
+    include: { user: { select: { id: true, username: true } } },
+  });
+  if (!comment) throw new AppError(404, "댓글을 찾을 수 없습니다.");
+  if (comment.userId !== userId) {
+    throw new AppError(403, "본인 댓글만 수정·삭제할 수 있습니다.");
+  }
+  return comment;
+}
+
+export async function updateComment(
+  articleId: string,
+  commentId: string,
+  userId: string,
+  body: string,
+) {
+  const existing = await getOwnedComment(articleId, commentId, userId);
+  const comment = await prisma.comment.update({
+    where: { id: existing.id },
+    data: { body },
+    include: { user: { select: { id: true, username: true } } },
+  });
+
+  return {
+    id: comment.id,
+    body: comment.body,
+    createdAt: comment.createdAt.toISOString(),
+    user: {
+      id: comment.user.id,
+      username: comment.user.username,
+    },
+  };
+}
+
+export async function deleteComment(
+  articleId: string,
+  commentId: string,
+  userId: string,
+) {
+  const existing = await getOwnedComment(articleId, commentId, userId);
+  await prisma.comment.delete({ where: { id: existing.id } });
+  return { ok: true };
+}
+
 export async function listMyLikes(userId: string) {
   const likes = await prisma.articleLike.findMany({
     where: {

@@ -8,6 +8,7 @@ import {
   toggleArticleLike,
   type ArticleComment,
 } from "../lib/engagement";
+import ArticleCommentItem from "../components/ArticleCommentItem";
 import { sectionMap, sections } from "../data/sections";
 import SectionTag from "../components/SectionTag";
 import NewsCarousel from "../components/NewsCarousel";
@@ -615,31 +616,24 @@ export default function ArticleDetailPage() {
                     {comments.length > 0 && (
                       <ul className="flex flex-col gap-3 border-t border-ink-900/10 pt-3">
                         {comments.map((comment) => (
-                          <li key={comment.id} className="text-sm">
-                            <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-                              <span className="font-semibold text-ink-800">
-                                {comment.user.username}
-                              </span>
-                              <time
-                                dateTime={comment.createdAt}
-                                className="text-xs text-ink-400"
-                              >
-                                {new Date(comment.createdAt).toLocaleString(
-                                  "ko-KR",
-                                  {
-                                    year: "numeric",
-                                    month: "2-digit",
-                                    day: "2-digit",
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                  },
-                                )}
-                              </time>
-                            </div>
-                            <p className="mt-1 whitespace-pre-wrap text-ink-700">
-                              {comment.body}
-                            </p>
-                          </li>
+                          <ArticleCommentItem
+                            key={comment.id}
+                            articleId={id!}
+                            comment={comment}
+                            isOwner={user?.id === comment.user.id}
+                            onUpdated={(updated) => {
+                              setComments((prev) =>
+                                prev.map((item) =>
+                                  item.id === updated.id ? updated : item,
+                                ),
+                              );
+                            }}
+                            onDeleted={(commentId) => {
+                              setComments((prev) =>
+                                prev.filter((item) => item.id !== commentId),
+                              );
+                            }}
+                          />
                         ))}
                       </ul>
                     )}
