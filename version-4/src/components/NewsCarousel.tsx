@@ -17,7 +17,8 @@ export default function NewsCarousel({ title, articles, moreHref }: Props) {
     const el = scrollerRef.current;
     if (!el) return;
     const card = el.querySelector<HTMLElement>(":scope > a");
-    const step = card ? card.offsetWidth + 12 : el.clientWidth * 0.85;
+    const gap = Number.parseFloat(getComputedStyle(el).columnGap || "0") || 0;
+    const step = card ? card.offsetWidth + gap : el.clientWidth * 0.85;
     el.scrollBy({ left: dir * step, behavior: "smooth" });
   }
 
@@ -39,16 +40,16 @@ export default function NewsCarousel({ title, articles, moreHref }: Props) {
         )}
       </div>
 
-      <div className="relative min-w-0">
+      <div className="relative min-w-0 px-4 sm:px-6">
         <div
           ref={scrollerRef}
-          className="flex snap-x snap-mandatory gap-1.5 overflow-x-auto scroll-smooth scrollbar-hide px-4 sm:px-6"
+          className="flex snap-x snap-mandatory gap-1.5 overflow-x-auto scroll-smooth scrollbar-hide"
         >
           {articles.map((a) => (
             <Link
               key={a.id}
               to={`/article/${a.id}`}
-              className="group w-[calc(34.5%)] shrink-0 snap-start md:w-[calc(33.333%-0.75rem)] lg:w-[calc(20.6%)] "
+              className="group w-[calc((100%-0.75rem)/3)] shrink-0 snap-start lg:w-[calc((100%-1.5rem)/5)]"
             >
               <div className="relative overflow-hidden  bg-ink-100">
                 <img
