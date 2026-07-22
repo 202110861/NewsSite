@@ -121,7 +121,7 @@ export default function HomePage() {
             </aside>
 
             <div className="min-w-0  flex flex-col xl:w-[calc(100%-600px)]">
-              <div className="mb-6 flex min-w-0 justify-center gap-6">
+              <div className="mb-6 flex min-w-0 justify-center gap-1">
                 <div className="flex min-w-0 flex-1 flex-col">
                   <HeroHeadlines articles={heroArticles} />
                   <NewsCarousel
