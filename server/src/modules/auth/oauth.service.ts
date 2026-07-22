@@ -4,6 +4,7 @@ import { prisma } from '../../db/client.js'
 import {
   requireFacebookOAuth,
   requireGoogleOAuth,
+  requireKakaoOAuth,
   requireNaverOAuth,
 } from '../../config/env.js'
 import { AppError } from '../../middlewares/errorHandler.middleware.js'
@@ -16,18 +17,18 @@ export { OAUTH_STATE_COOKIE }
 function sanitizeUsernameBase(raw: string) {
   const cleaned = raw
     .toLowerCase()
-    .replace(/[^a-z0-9_]/g, '_')
+    .replace(/[^\p{L}\p{N}_]/gu, '_')
     .replace(/_+/g, '_')
     .replace(/^_|_$/g, '')
-  return (cleaned || 'user').slice(0, 20)
+  return Array.from(cleaned || 'user').slice(0, 20).join('')
 }
 
-async function uniqueUsername(base: string) {
+async function uniqueUsername(base: string, currentUserId?: string) {
   const root = sanitizeUsernameBase(base)
   for (let i = 0; i < 8; i += 1) {
     const candidate = i === 0 ? root : `${root}_${randomBytes(2).toString('hex')}`
     const existing = await prisma.user.findUnique({ where: { username: candidate } })
-    if (!existing) return candidate
+    if (!existing || existing.id === currentUserId) return candidate
   }
   return `${root}_${randomBytes(4).toString('hex')}`
 }
@@ -59,6 +60,7 @@ async function findOrCreateOAuthUser(input: {
   provider: AuthProvider
   providerUserId: string
   usernameHint: string
+  syncUsername?: boolean
 }) {
   const existing = await prisma.oAuthAccount.findUnique({
     where: {
@@ -71,7 +73,17 @@ async function findOrCreateOAuthUser(input: {
   })
 
   if (existing) {
-    return issueSession(existing.user)
+    let user = existing.user
+    if (input.syncUsername) {
+      const username = await uniqueUsername(input.usernameHint, user.id)
+      if (username !== user.username) {
+        user = await prisma.user.update({
+          where: { id: user.id },
+          data: { username },
+        })
+      }
+    }
+    return issueSession(user)
   }
 
   const username = await uniqueUsername(input.usernameHint)
@@ -134,6 +146,18 @@ export function getFacebookAuthorizeUrl(state: string) {
     scope: 'email,public_profile',
   })
   return `https://www.facebook.com/v21.0/dialog/oauth?${params.toString()}`
+}
+
+export function getKakaoAuthorizeUrl(state: string) {
+  const { clientId, redirectUri } = requireKakaoOAuth()
+  const params = new URLSearchParams({
+    response_type: 'code',
+    client_id: clientId,
+    redirect_uri: redirectUri,
+    state,
+    scope: 'profile_nickname',
+  })
+  return `https://kauth.kakao.com/oauth/authorize?${params.toString()}`
 }
 
 export async function completeNaverLogin(code: string) {
@@ -298,5 +322,68 @@ export async function completeFacebookLogin(code: string) {
     provider: 'FACEBOOK',
     providerUserId: profile.id,
     usernameHint,
+  })
+}
+
+export async function completeKakaoLogin(code: string) {
+  const { clientId, clientSecret, redirectUri } = requireKakaoOAuth()
+  const tokenParams = new URLSearchParams({
+    grant_type: 'authorization_code',
+    client_id: clientId,
+    redirect_uri: redirectUri,
+    code,
+  })
+  if (clientSecret) tokenParams.set('client_secret', clientSecret)
+
+  const tokenRes = await fetch('https://kauth.kakao.com/oauth/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8' },
+    body: tokenParams,
+  })
+  const tokenBody = (await tokenRes.json()) as {
+    access_token?: string
+    error?: string
+    error_description?: string
+  }
+
+  if (!tokenRes.ok || !tokenBody.access_token) {
+    throw new AppError(
+      401,
+      tokenBody.error_description ?? '카카오 토큰 발급에 실패했습니다.',
+    )
+  }
+
+  const profileRes = await fetch('https://kapi.kakao.com/v2/user/me', {
+    headers: {
+      Authorization: `Bearer ${tokenBody.access_token}`,
+      'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8',
+    },
+  })
+  const profile = (await profileRes.json()) as {
+    id?: number
+    properties?: { nickname?: string }
+    kakao_account?: {
+      email?: string
+      profile?: { nickname?: string }
+    }
+    msg?: string
+  }
+
+  if (!profileRes.ok || profile.id === undefined) {
+    throw new AppError(401, profile.msg ?? '카카오 사용자 정보를 가져오지 못했습니다.')
+  }
+
+  const providerUserId = String(profile.id)
+  const usernameHint =
+    profile.kakao_account?.profile?.nickname ||
+    profile.properties?.nickname ||
+    profile.kakao_account?.email?.split('@')[0] ||
+    `kakao_${providerUserId.slice(0, 8)}`
+
+  return findOrCreateOAuthUser({
+    provider: 'KAKAO' as AuthProvider,
+    providerUserId,
+    usernameHint,
+    syncUsername: true,
   })
 }

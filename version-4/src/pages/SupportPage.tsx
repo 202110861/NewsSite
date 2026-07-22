@@ -13,6 +13,17 @@ import {
   type SubscriptionPlan,
 } from '../lib/api'
 
+
+import { getApiErrorMessage } from '../lib/errors'
+import {
+  // requestAccountBilling, // 추후: 케이뱅크·카카오뱅크
+  requestKakaoBilling,
+  // requestNaverBilling, // 추후: 네이버페이
+  requestTossBilling,
+  // requestPhoneBilling, // 추후: 휴대폰(다날)
+} from '../lib/portone'
+import { useAuth } from '../context/AuthContext'
+
 /** 결제 수단 브랜드 컬러 (배경 · 글자 · 테두리) */
 const PAY_METHOD_BRAND: Record<
   DisplayPayMethod,
@@ -40,15 +51,6 @@ const PAY_METHOD_BRAND: Record<
     selectedRing: 'ring-2 ring-[#191919] ring-offset-2',
   },
 }
-import { getApiErrorMessage } from '../lib/errors'
-import {
-  // requestAccountBilling, // 추후: 케이뱅크·카카오뱅크
-  requestKakaoBilling,
-  // requestNaverBilling, // 추후: 네이버페이
-  requestTossBilling,
-  // requestPhoneBilling, // 추후: 휴대폰(다날)
-} from '../lib/portone'
-import { useAuth } from '../context/AuthContext'
 
 interface StartPaymentResult {
   subscriptionId: string

@@ -3,7 +3,7 @@ import ArticleSideNewsSkeleton from "./ArticleSideNewsSkeleton";
 
 function CarouselSkeleton() {
   return (
-    <section className="mx-auto w-full min-w-0 max-w-6xl px-6 py-7">
+    <section className="mx-auto w-full min-w-0 max-w-6xl px-6 py-3">
       <div className="mb-4 flex items-baseline justify-between border-b-2 border-ink-900 px-4 pb-2.5 sm:px-6">
         <Skeleton className="h-6 w-24 rounded-sm sm:h-7 sm:w-28" />
         <Skeleton className="h-3.5 w-14" />
@@ -12,9 +12,9 @@ function CarouselSkeleton() {
         {Array.from({ length: 4 }).map((_, i) => (
           <div
             key={i}
-            className="w-[82%] shrink-0 sm:w-[calc(50%-0.5rem)] md:w-[calc(33.333%-0.75rem)] lg:w-56"
+            className="w-[calc(34%)] shrink-0 md:w-[calc(33.333%-0.75rem)] lg:w-[calc(19.7%)]"
           >
-            <Skeleton className="aspect-[4/3] w-full rounded-md" />
+            <Skeleton className="aspect-4/3 w-full rounded-md" />
             <div className="mt-2.5 flex flex-col gap-1.5">
               <Skeleton className="h-4 w-12 rounded-sm" />
               <Skeleton className="h-4 w-full" />
@@ -48,7 +48,7 @@ function SectionGridSkeleton() {
                     key={j}
                     className={`flex min-w-0 items-center gap-2.5 sm:gap-3${j >= 3 ? " hidden sm:flex" : ""}`}
                   >
-                    <Skeleton className="h-11 w-[4.5rem] shrink-0 rounded sm:h-12 sm:w-16" />
+                    <Skeleton className="h-11 w-18 shrink-0 rounded sm:h-12 sm:w-16" />
                     <div className="flex min-w-0 flex-1 flex-col gap-1.5">
                       <Skeleton className="h-3.5 w-full" />
                       <Skeleton className="h-3.5 w-3/4" />
@@ -73,7 +73,8 @@ export default function HomePageSkeleton() {
     >
       <div className="min-w-0 flex-1">
         <div className="flex items-stretch border-b border-ink-900/10 bg-flash-100">
-          <div className="flex shrink-0 items-center bg-flash-600 py-2.5">
+          <div className="flex shrink-0 items-center gap-2 bg-flash-600 px-4 py-2.5">
+            <Skeleton className="h-2 w-2 rounded-full bg-white/30" />
             <Skeleton className="h-3 w-20 bg-white/30" />
           </div>
         </div>
@@ -81,11 +82,11 @@ export default function HomePageSkeleton() {
         <div className="flex min-w-0 justify-center gap-4">
           <aside className="hidden w-40 shrink-0 sm:my-6 lg:block" />
 
-          <div className="flex min-w-0 w-full max-w-full flex-col">
-            <div className="mb-6 flex justify-center gap-6">
-              <div className="flex min-w-0 flex-col">
-                <section className="mx-auto w-full min-w-0 max-w-6xl px-6 pt-6 sm:px-6">
-                  <Skeleton className="aspect-[16/9] w-full rounded-lg lg:aspect-[21/9]" />
+          <div className="flex w-full min-w-0 flex-col xl:w-[calc(100%-600px)]">
+            <div className="mb-6 flex min-w-0 justify-center gap-6">
+              <div className="flex min-w-0 flex-1 flex-col">
+                <section className="mx-auto w-full min-w-0 max-w-6xl px-6 py-6 sm:px-6">
+                  <Skeleton className="aspect-video w-full rounded-lg" />
                 </section>
 
                 <CarouselSkeleton />

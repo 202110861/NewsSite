@@ -6,6 +6,7 @@ interface ArticleSideNewsProps {
   publisher: Article[];
   latest: Article[];
   popular: Article[];
+  className?: string;
 }
 
 function SectionTitle({ children }: { children: string }) {
@@ -53,7 +54,7 @@ function FeaturedList({ articles }: { articles: Article[] }) {
             <img
               src={resolveMediaUrl(lead.image)}
               alt=""
-              className="aspect-[4/3] w-full object-cover transition duration-500 group-hover:scale-105"
+              className="aspect-4/3 transition duration-500 group-hover:scale-105"
               loading="lazy"
             />
           </div>
@@ -85,10 +86,11 @@ export default function ArticleSideNews({
   publisher,
   latest,
   popular,
+  className = "mt-7",
 }: ArticleSideNewsProps) {
   return (
     <aside
-      className="sticky top-24 mt-7 hidden w-64 shrink-0 self-start xl:block"
+      className={`sticky top-24 hidden w-64 shrink-0 self-start xl:block ${className}`}
       aria-label="관련 뉴스"
     >
       <section>

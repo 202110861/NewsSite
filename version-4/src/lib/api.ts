@@ -1,8 +1,10 @@
 const API_BASE = import.meta.env.VITE_API_URL ?? "/api";
 
 let accessToken: string | null = null;
-let refreshPromise: Promise<{ accessToken: string; user: AuthUser } | null> | null =
-  null;
+let refreshPromise: Promise<{
+  accessToken: string;
+  user: AuthUser;
+} | null> | null = null;
 
 export function setAccessToken(token: string | null) {
   accessToken = token;
@@ -134,8 +136,13 @@ export const api = {
       method: "PATCH",
       body: body ? JSON.stringify(body) : undefined,
     }),
-  delete: <T>(path: string) => request<T>(path, { method: "DELETE" }),
-  upload: <T>(path: string, formData: FormData) => uploadRequest<T>(path, formData),
+  delete: <T>(path: string, body?: unknown) =>
+    request<T>(path, {
+      method: "DELETE",
+      body: body ? JSON.stringify(body) : undefined,
+    }),
+  upload: <T>(path: string, formData: FormData) =>
+    uploadRequest<T>(path, formData),
 };
 
 export interface AuthUser {
@@ -180,9 +187,10 @@ export const PAY_METHOD_ROWS = [
   ["PHONE", "TOSS_PAY", "KAKAO_PAY"],
 ] as const satisfies readonly (readonly PayMethod[])[];
 
-export const DISPLAY_PAY_METHODS = PAY_METHOD_ROWS.flat() as readonly PayMethod[];
+export const DISPLAY_PAY_METHODS = PAY_METHOD_ROWS.flat();
 
 export type DisplayPayMethod = (typeof DISPLAY_PAY_METHODS)[number];
+
 export type ActivePayMethod = (typeof ACTIVE_PAY_METHODS)[number];
 export type ComingSoonPayMethod = (typeof COMING_SOON_PAY_METHODS)[number];
 

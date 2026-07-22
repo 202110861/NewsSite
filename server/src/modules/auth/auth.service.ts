@@ -87,8 +87,67 @@ export async function logout(refreshToken: string | undefined) {
 export async function getMe(userId: string) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { id: true, username: true, role: true, createdAt: true },
+    select: { id: true, username: true, role: true, createdAt: true, passwordHash: true },
   })
   if (!user) throw new AppError(404, '사용자를 찾을 수 없습니다.')
-  return user
+  return {
+    id: user.id,
+    username: user.username,
+    role: user.role,
+    createdAt: user.createdAt,
+    hasPassword: Boolean(user.passwordHash),
+  }
+}
+
+export async function changePassword(
+  userId: string,
+  currentPassword: string,
+  newPassword: string,
+) {
+  const user = await prisma.user.findUnique({ where: { id: userId } })
+  if (!user) throw new AppError(404, '사용자를 찾을 수 없습니다.')
+  if (!user.passwordHash) {
+    throw new AppError(400, '비밀번호가 설정되지 않은 계정입니다.')
+  }
+  if (!(await verifyPassword(currentPassword, user.passwordHash))) {
+    throw new AppError(401, '기존 비밀번호가 올바르지 않습니다.')
+  }
+
+  const passwordHash = await hashPassword(newPassword)
+  await prisma.user.update({
+    where: { id: userId },
+    data: { passwordHash },
+  })
+
+  await prisma.refreshToken.deleteMany({ where: { userId } })
+
+  return { message: '비밀번호가 변경되었습니다.' }
+}
+
+export async function deleteAccount(userId: string, password: string) {
+  const user = await prisma.user.findUnique({ where: { id: userId } })
+  if (!user) throw new AppError(404, '사용자를 찾을 수 없습니다.')
+  if (!user.passwordHash) {
+    throw new AppError(400, '비밀번호가 설정되지 않은 계정입니다.')
+  }
+  if (!(await verifyPassword(password, user.passwordHash))) {
+    throw new AppError(401, '비밀번호가 올바르지 않습니다.')
+  }
+
+  await prisma.$transaction(async (tx) => {
+    const subscriptions = await tx.subscription.findMany({
+      where: { userId },
+      select: { id: true },
+    })
+    const subscriptionIds = subscriptions.map((s) => s.id)
+    if (subscriptionIds.length > 0) {
+      await tx.payment.deleteMany({
+        where: { subscriptionId: { in: subscriptionIds } },
+      })
+      await tx.subscription.deleteMany({ where: { userId } })
+    }
+    await tx.user.delete({ where: { id: userId } })
+  })
+
+  return { message: '회원 탈퇴가 완료되었습니다.' }
 }

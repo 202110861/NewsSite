@@ -5,16 +5,30 @@ import { authMiddleware, type AuthRequest } from '../../middlewares/auth.middlew
 import * as authService from './auth.service.js'
 import * as oauthService from './oauth.service.js'
 import * as engagementService from '../engagement/engagement.service.js'
-import { checkUsernameSchema, loginSchema, signupSchema } from './auth.validation.js'
+import {
+  changePasswordSchema,
+  checkUsernameSchema,
+  deleteAccountSchema,
+  loginSchema,
+  signupSchema,
+} from './auth.validation.js'
 
 const REFRESH_COOKIE = 'refreshToken'
 const OAUTH_STATE_COOKIE = oauthService.OAUTH_STATE_COOKIE
 
+function getAuthCookiePolicy() {
+  const secure =
+    env.NODE_ENV === 'production' || new URL(env.CLIENT_URL).protocol === 'https:'
+  return {
+    secure,
+    sameSite: secure ? ('none' as const) : ('lax' as const),
+  }
+}
+
 function setRefreshCookie(res: import('express').Response, token: string) {
   res.cookie(REFRESH_COOKIE, token, {
     httpOnly: true,
-    secure: env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    ...getAuthCookiePolicy(),
     maxAge: 14 * 24 * 60 * 60 * 1000,
     path: '/api/auth',
   })
@@ -23,8 +37,7 @@ function setRefreshCookie(res: import('express').Response, token: string) {
 function setOAuthStateCookie(res: import('express').Response, state: string) {
   res.cookie(OAUTH_STATE_COOKIE, oauthService.hashState(state), {
     httpOnly: true,
-    secure: env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    ...getAuthCookiePolicy(),
     maxAge: 10 * 60 * 1000,
     path: '/api/auth',
   })
@@ -111,6 +124,31 @@ authRouter.post('/logout', async (req, res, next) => {
     res.json({ message: '로그아웃되었습니다.' })
   } catch (err) {
     next(err)
+  }
+})
+
+authRouter.get('/kakao', (_req, res, next) => {
+  try {
+    const state = oauthService.createOAuthState()
+    setOAuthStateCookie(res, state)
+    res.redirect(oauthService.getKakaoAuthorizeUrl(state))
+  } catch (err) {
+    next(err)
+  }
+})
+
+authRouter.get('/kakao/callback', async (req, res) => {
+  try {
+    const code = typeof req.query.code === 'string' ? req.query.code : undefined
+    const state = typeof req.query.state === 'string' ? req.query.state : undefined
+    if (!code) throw new AppError(400, '카카오 인증 코드가 없습니다.')
+    assertOAuthState(req, state)
+    const result = await oauthService.completeKakaoLogin(code)
+    finishOAuthLogin(res, result)
+  } catch (err) {
+    const message =
+      err instanceof AppError ? err.message : '카카오 로그인에 실패했습니다.'
+    redirectOAuthError(res, message)
   }
 })
 
@@ -213,6 +251,32 @@ usersRouter.get('/me/comments', authMiddleware, async (req: AuthRequest, res, ne
   try {
     const comments = await engagementService.listMyComments(req.user!.id)
     res.json(comments)
+  } catch (err) {
+    next(err)
+  }
+})
+
+usersRouter.patch('/me/password', authMiddleware, async (req: AuthRequest, res, next) => {
+  try {
+    const { currentPassword, newPassword } = changePasswordSchema.parse(req.body)
+    const result = await authService.changePassword(
+      req.user!.id,
+      currentPassword,
+      newPassword,
+    )
+    res.clearCookie(REFRESH_COOKIE, { path: '/api/auth' })
+    res.json(result)
+  } catch (err) {
+    next(err)
+  }
+})
+
+usersRouter.delete('/me', authMiddleware, async (req: AuthRequest, res, next) => {
+  try {
+    const { password } = deleteAccountSchema.parse(req.body)
+    const result = await authService.deleteAccount(req.user!.id, password)
+    res.clearCookie(REFRESH_COOKIE, { path: '/api/auth' })
+    res.json(result)
   } catch (err) {
     next(err)
   }

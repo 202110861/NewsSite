@@ -8,6 +8,13 @@ export default function ArticleSocialLoginRail() {
       aria-label="소셜 로그인"
     >
       <a
+        href={`${API_BASE}/auth/kakao`}
+        aria-label="카카오로 로그인"
+        className="flex h-10 w-10 items-center justify-center bg-[#FEE500] text-[#191919] hover:brightness-95"
+      >
+        <KakaoIcon />
+      </a>
+      <a
         href={`${API_BASE}/auth/naver`}
         aria-label="네이버로 로그인"
         className="flex h-10 w-10 items-center justify-center bg-[#03C75A] text-white hover:brightness-95"
@@ -29,6 +36,17 @@ export default function ArticleSocialLoginRail() {
         <FacebookIcon />
       </a>
     </aside>
+  );
+}
+
+function KakaoIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        fill="currentColor"
+        d="M12 3C6.477 3 2 6.582 2 11c0 2.856 1.87 5.364 4.683 6.78l-.95 3.49a.58.58 0 0 0 .894.626l4.165-2.76c.396.043.8.064 1.208.064 5.523 0 10-3.582 10-8.2s-4.477-8-10-8Z"
+      />
+    </svg>
   );
 }
 
