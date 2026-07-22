@@ -7,7 +7,7 @@ import {
 } from "react";
 import { Link } from "react-router-dom";
 import type { Article } from "../types/news";
-import SectionTag from "./SectionTag";
+// import SectionTag from "./SectionTag";
 import { resolveMediaUrl } from "../utils/media";
 
 const AUTO_MS = 5000;
