@@ -5,7 +5,7 @@ import {
 } from "../../middlewares/auth.middleware.js";
 import { optionalAuthMiddleware } from "../../middlewares/optionalAuth.middleware.js";
 import * as engagementService from "./engagement.service.js";
-import { createCommentSchema } from "./engagement.validation.js";
+import { createCommentSchema, updateCommentSchema } from "./engagement.validation.js";
 
 export const engagementRouter = Router({ mergeParams: true });
 
@@ -67,6 +67,48 @@ engagementRouter.post(
         body,
       );
       res.status(201).json(comment);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+engagementRouter.patch(
+  "/comments/:commentId",
+  authMiddleware,
+  async (req: AuthRequest, res, next) => {
+    try {
+      const commentId = Array.isArray(req.params.commentId)
+        ? req.params.commentId[0]!
+        : req.params.commentId;
+      const { body } = updateCommentSchema.parse(req.body);
+      const comment = await engagementService.updateComment(
+        getArticleId(req),
+        commentId,
+        req.user!.id,
+        body,
+      );
+      res.json(comment);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+engagementRouter.delete(
+  "/comments/:commentId",
+  authMiddleware,
+  async (req: AuthRequest, res, next) => {
+    try {
+      const commentId = Array.isArray(req.params.commentId)
+        ? req.params.commentId[0]!
+        : req.params.commentId;
+      const result = await engagementService.deleteComment(
+        getArticleId(req),
+        commentId,
+        req.user!.id,
+      );
+      res.json(result);
     } catch (err) {
       next(err);
     }

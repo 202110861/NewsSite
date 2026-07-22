@@ -50,6 +50,19 @@ export function createComment(articleId: string, body: string) {
   return api.post<ArticleComment>(`/articles/${articleId}/comments`, { body });
 }
 
+export function updateComment(articleId: string, commentId: string, body: string) {
+  return api.patch<ArticleComment>(
+    `/articles/${articleId}/comments/${commentId}`,
+    { body },
+  );
+}
+
+export function deleteComment(articleId: string, commentId: string) {
+  return api.delete<{ ok: boolean }>(
+    `/articles/${articleId}/comments/${commentId}`,
+  );
+}
+
 export function fetchMyLikes() {
   return api.get<MyLikeItem[]>("/users/me/likes");
 }
