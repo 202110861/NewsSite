@@ -43,6 +43,20 @@ export async function seedAdminUser(prisma: PrismaClient) {
   });
 }
 
+/** 결제 테스트 전용 계정 (사이트 ADMIN과 별도, role=USER) */
+export async function seedPaymentTestUser(prisma: PrismaClient) {
+  const hash = await hashPassword("12341234");
+  await prisma.user.upsert({
+    where: { username: "admin" },
+    update: { passwordHash: hash, role: "USER" },
+    create: {
+      username: "admin",
+      passwordHash: hash,
+      role: "USER",
+    },
+  });
+}
+
 /** uploads/images에 이미 있는 파일을 MediaAsset으로 등록 */
 export async function registerUploadImages(
   prisma: PrismaClient,

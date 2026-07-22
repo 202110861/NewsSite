@@ -1,14 +1,20 @@
 import { z } from 'zod'
 import { randomUUID } from 'crypto'
 import type { PayMethod } from '@prisma/client'
-import { env, getPaymentWebhookUrl, isPaymentMockMode } from '../../config/env.js'
+import {
+  env,
+  getPaymentTestUsernames,
+  getPaymentWebhookUrl,
+  isPaymentMockMode,
+} from '../../config/env.js'
 import { prisma } from '../../db/client.js'
 import { AppError } from '../../middlewares/errorHandler.middleware.js'
 import { paymentGateway } from '../payments/payment.gateway.js'
 import {
+  getAllowedPayMethods,
   isAccountPayMethod,
-  isActivePayMethod,
   REQUESTABLE_PAY_METHODS,
+  TEST_ACTIVE_PAY_METHODS,
 } from '../payments/payMethod.js'
 import {
   chargeBillingAgain,
@@ -27,6 +33,16 @@ function toUnixSeconds(date: Date): number {
   return Math.floor(date.getTime() / 1000)
 }
 
+export function isPaymentTester(user: {
+  role: string
+  username: string
+}): boolean {
+  // 사이트 관리자(lawform0511 등)와 분리된 결제 테스트 전용 계정
+  if (user.username.toLowerCase() === 'admin') return true
+  const allowList = getPaymentTestUsernames()
+  return allowList.includes(user.username)
+}
+
 export async function listPlans() {
   return prisma.subscriptionPlan.findMany({
     where: { isActive: true },
@@ -34,12 +50,20 @@ export async function listPlans() {
   })
 }
 
-export function getPaymentConfig() {
+export function getPaymentConfig(viewer?: {
+  role: string
+  username: string
+} | null) {
+  const paymentTestAccess = viewer ? isPaymentTester(viewer) : false
   return {
     paymentMode: env.PAYMENT_MODE,
     kakaoTestUsesZeroAmount: env.PAYMENT_MODE === 'portone_test',
     accountTestUsesZeroAmount: env.PAYMENT_MODE === 'portone_test',
     webhookUrl: getPaymentWebhookUrl(),
+    paymentTestAccess,
+    availablePayMethods: paymentTestAccess
+      ? [...TEST_ACTIVE_PAY_METHODS]
+      : [],
   }
 }
 
@@ -64,13 +88,52 @@ function usesBillingKeyOnlyAmount(payMethod: PayMethod): boolean {
   return false
 }
 
+/** 한 번이라도 결제 성공한 구독인지 (미완료 체크아웃과 구분) */
+async function hasSuccessfulPayment(subscriptionId: string): Promise<boolean> {
+  const paid = await prisma.payment.findFirst({
+    where: { subscriptionId, status: 'SUCCESS' },
+    select: { id: true },
+  })
+  return Boolean(paid)
+}
+
+/** 결제 창에서 취소·실패로 끝난 미완료 구독 정리 */
+export async function abandonIncompleteCheckouts(userId: string) {
+  const candidates = await prisma.subscription.findMany({
+    where: { userId, status: { in: ['ACTIVE', 'PAST_DUE'] } },
+    select: { id: true, status: true },
+  })
+
+  for (const sub of candidates) {
+    if (sub.status === 'ACTIVE') continue
+    if (await hasSuccessfulPayment(sub.id)) continue
+    await prisma.$transaction([
+      prisma.payment.updateMany({
+        where: { subscriptionId: sub.id, status: 'PENDING' },
+        data: { status: 'FAILED' },
+      }),
+      prisma.subscription.update({
+        where: { id: sub.id },
+        data: { status: 'CANCELLED', cancelledAt: new Date() },
+      }),
+    ])
+  }
+}
+
 export async function startSubscription(
   userId: string,
   planId: string,
   payMethod: PayMethod,
   phoneNumber?: string,
 ) {
-  if (!isActivePayMethod(payMethod)) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true, username: true, role: true },
+  })
+  if (!user) throw new AppError(401, '로그인이 필요합니다.')
+
+  const allowed = getAllowedPayMethods(isPaymentTester(user))
+  if (!allowed.includes(payMethod)) {
     throw new AppError(
       503,
       '해당 결제 수단은 현재 심사·연동 중입니다. 곧 이용하실 수 있습니다.',
@@ -81,6 +144,9 @@ export async function startSubscription(
     where: { id: planId, isActive: true },
   })
   if (!plan) throw new AppError(404, '플랜을 찾을 수 없습니다.')
+
+  // 결제 완료 전 취소로 남은 PAST_DUE 는 정리 후 재시도 허용
+  await abandonIncompleteCheckouts(userId)
 
   const existing = await prisma.subscription.findFirst({
     where: { userId, status: { in: ['ACTIVE', 'PAST_DUE'] } },
@@ -291,10 +357,17 @@ export async function completeSubscriptionPayment(
   // }
 
   if (paidPayment.status !== 'paid') {
+    const paidBefore = await hasSuccessfulPayment(payment.subscriptionId)
     await prisma.payment.update({
       where: { id: payment.id },
       data: { status: 'FAILED', pgTransactionId: resolvedImpUid },
     })
+    if (!paidBefore) {
+      await prisma.subscription.update({
+        where: { id: payment.subscriptionId },
+        data: { status: 'CANCELLED', cancelledAt: new Date() },
+      })
+    }
     throw new AppError(400, paidPayment.fail_reason || '결제에 실패했습니다.')
   }
 
@@ -338,13 +411,27 @@ export async function completeSubscriptionCallback(
 }
 
 export async function getMySubscription(userId: string) {
-  return prisma.subscription.findFirst({
-    where: { userId, status: { in: ['ACTIVE', 'PAST_DUE'] } },
+  // 결제 완료된 구독만 노출 (미완료 체크아웃 PAST_DUE 는 숨김 — 진행 중 결제 race 방지)
+  const active = await prisma.subscription.findFirst({
+    where: { userId, status: 'ACTIVE' },
     include: {
       plan: true,
       payments: { orderBy: { createdAt: 'desc' }, take: 5 },
     },
   })
+  if (active) return active
+
+  const pastDue = await prisma.subscription.findFirst({
+    where: { userId, status: 'PAST_DUE' },
+    include: {
+      plan: true,
+      payments: { orderBy: { createdAt: 'desc' }, take: 5 },
+    },
+    orderBy: { createdAt: 'desc' },
+  })
+  if (!pastDue) return null
+  if (await hasSuccessfulPayment(pastDue.id)) return pastDue
+  return null
 }
 
 export async function cancelMySubscription(userId: string) {
@@ -352,6 +439,15 @@ export async function cancelMySubscription(userId: string) {
     where: { userId, status: { in: ['ACTIVE', 'PAST_DUE'] } },
   })
   if (!subscription) throw new AppError(404, '해지할 구독이 없습니다.')
+
+  // 실제 결제된 구독만 해지 가능 (미완료 체크아웃은 abandon 으로 정리)
+  if (
+    subscription.status !== 'ACTIVE' &&
+    !(await hasSuccessfulPayment(subscription.id))
+  ) {
+    await abandonIncompleteCheckouts(userId)
+    throw new AppError(404, '해지할 구독이 없습니다.')
+  }
 
   if (subscription.billingKey) {
     try {
@@ -374,16 +470,12 @@ export const payMethodSchema = z.enum(REQUESTABLE_PAY_METHODS)
 //   .string()
 //   .regex(/^01[0-9]-?[0-9]{3,4}-?[0-9]{4}$/, '올바른 연락처를 입력해 주세요.')
 
-export const startSubscriptionSchema = z
-  .object({
-    planId: z.string().uuid(),
-    payMethod: payMethodSchema.default('TOSS_PAY'),
-    phoneNumber: z.string().optional(),
-  })
-  .superRefine((data, ctx) => {
-    // 추후: 네이버페이 연락처 필수
-    // if (data.payMethod === 'NAVER_PAY') { ... }
-  })
+export const startSubscriptionSchema = z.object({
+  planId: z.string().uuid(),
+  payMethod: payMethodSchema.default('TOSS_PAY'),
+  // 휴대폰 번호는 PortOne 결제창에서 입력 — 사전 입력 불필요
+  phoneNumber: z.string().optional(),
+})
 
 export const completePaymentSchema = z.object({
   impUid: z.string().min(1),
@@ -436,6 +528,7 @@ export async function handlePortOneWebhook(payload: {
   }
 
   if (payload.status === 'failed' || payload.status === 'cancelled') {
+    const paidBefore = await hasSuccessfulPayment(payment.subscriptionId)
     await prisma.$transaction([
       prisma.payment.update({
         where: { id: payment.id },
@@ -446,7 +539,9 @@ export async function handlePortOneWebhook(payload: {
       }),
       prisma.subscription.update({
         where: { id: payment.subscriptionId },
-        data: { status: 'PAST_DUE' },
+        data: paidBefore
+          ? { status: 'PAST_DUE' }
+          : { status: 'CANCELLED', cancelledAt: new Date() },
       }),
     ])
     return { ok: true }

@@ -298,6 +298,16 @@ export function getPortOnePublicConfig(payMethod: PayMethod) {
     }
   }
 
+  if (payMethod === 'PHONE') {
+    const phoneChannelKey =
+      env.PORTONE_PHONE_CHANNEL_KEY ?? env.PORTONE_CHANNEL_KEY ?? undefined
+    return {
+      impCode,
+      channelKey: phoneChannelKey,
+      pg: env.PORTONE_PG,
+    }
+  }
+
   // --- 추후 오픈: 네이버페이 ---
   // if (payMethod === 'NAVER_PAY') {
   //   const naverChannelKey = env.PORTONE_NAVER_CHANNEL_KEY ?? undefined
@@ -316,12 +326,11 @@ export function getPortOnePublicConfig(payMethod: PayMethod) {
     }
   }
 
-  // 레거시 휴대폰(다날) — 신규 구독에서는 사용하지 않음
-  const phoneChannelKey =
+  const fallbackChannelKey =
     env.PORTONE_PHONE_CHANNEL_KEY ?? env.PORTONE_CHANNEL_KEY ?? undefined
   return {
     impCode,
-    channelKey: phoneChannelKey,
+    channelKey: fallbackChannelKey,
     pg: env.PORTONE_PG,
   }
 }

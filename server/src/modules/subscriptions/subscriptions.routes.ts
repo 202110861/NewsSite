@@ -18,14 +18,17 @@ subscriptionsRouter.get('/plans', async (_req, res, next) => {
   }
 })
 
-subscriptionsRouter.get('/config', async (_req, res, next) => {
-  try {
-    res.json(subscriptionsService.getPaymentConfig())
-  } catch (err) {
-    next(err)
-  }
-})
-
+subscriptionsRouter.get(
+  '/config',
+  authMiddleware,
+  async (req: AuthRequest, res, next) => {
+    try {
+      res.json(subscriptionsService.getPaymentConfig(req.user ?? null))
+    } catch (err) {
+      next(err)
+    }
+  },
+)
 subscriptionsRouter.post('/', authMiddleware, async (req: AuthRequest, res, next) => {
   try {
     const { planId, payMethod, phoneNumber } = startSubscriptionSchema.parse(req.body)
@@ -81,6 +84,20 @@ subscriptionsRouter.get('/me', authMiddleware, async (req: AuthRequest, res, nex
     next(err)
   }
 })
+
+/** 결제창 취소·이탈 시 미완료 체크아웃 정리 */
+subscriptionsRouter.post(
+  '/pending/abandon',
+  authMiddleware,
+  async (req: AuthRequest, res, next) => {
+    try {
+      await subscriptionsService.abandonIncompleteCheckouts(req.user!.id)
+      res.json({ ok: true })
+    } catch (err) {
+      next(err)
+    }
+  },
+)
 
 subscriptionsRouter.patch('/me/cancel', authMiddleware, async (req: AuthRequest, res, next) => {
   try {

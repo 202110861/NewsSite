@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import MockPaymentModal from '../components/MockPaymentModal'
 import {
   api,
-  isComingSoonPayMethod,
+  isPayMethodAvailable,
   PAY_METHOD_COMING_SOON_MESSAGE,
   PAY_METHOD_LABELS,
   PAY_METHOD_ROWS,
@@ -19,8 +19,8 @@ import {
   // requestAccountBilling, // 추후: 케이뱅크·카카오뱅크
   requestKakaoBilling,
   // requestNaverBilling, // 추후: 네이버페이
+  requestPhoneBilling,
   requestTossBilling,
-  // requestPhoneBilling, // 추후: 휴대폰(다날)
 } from '../lib/portone'
 import { useAuth } from '../context/AuthContext'
 
@@ -77,8 +77,10 @@ export default function SupportPage() {
     kakaoTestUsesZeroAmount: false,
     accountTestUsesZeroAmount: false,
     webhookUrl: undefined,
+    paymentTestAccess: false,
+    availablePayMethods: [],
   })
-  const [payMethod, setPayMethod] = useState<DisplayPayMethod>('PHONE')
+  const [payMethod, setPayMethod] = useState<DisplayPayMethod>('KAKAO_PAY')
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
@@ -87,29 +89,68 @@ export default function SupportPage() {
   const [pendingPayment, setPendingPayment] = useState<StartPaymentResult | null>(null)
 
   useEffect(() => {
+    if (!user) return
+
+    let cancelled = false
+    setLoading(true)
+
     Promise.all([
       api.get<SubscriptionPlan[]>('/subscriptions/plans'),
       api.get<PaymentConfig>('/subscriptions/config'),
     ])
       .then(([planList, config]) => {
+        if (cancelled) return
         setPlans(planList)
         setPaymentConfig(config)
         if (planList[0]) setSelectedPlanId(planList[0].id)
+        const available = config.availablePayMethods ?? []
+        if (available.length > 0) {
+          setPayMethod(available[0] as DisplayPayMethod)
+        }
       })
-      .catch(() => setError('플랜을 불러오지 못했습니다.'))
-      .finally(() => setLoading(false))
-  }, [])
+      .catch(() => {
+        if (!cancelled) setError('플랜을 불러오지 못했습니다.')
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [user])
 
   const selectedPlan = plans.find((p) => p.id === selectedPlanId)
   const isMockMode = paymentConfig.paymentMode === 'mock'
-  const paymentUnavailable = isComingSoonPayMethod(payMethod)
-  const comingSoonMessage = paymentUnavailable
-    ? PAY_METHOD_COMING_SOON_MESSAGE[payMethod]
-    : null
+  const isPaymentTester =
+    paymentConfig.paymentTestAccess === true ||
+    user?.username?.toLowerCase() === 'admin'
+  const availablePayMethods = isPaymentTester
+    ? paymentConfig.availablePayMethods?.length
+      ? paymentConfig.availablePayMethods
+      : (['PHONE', 'TOSS_PAY', 'KAKAO_PAY'] as PayMethod[])
+    : (paymentConfig.availablePayMethods ?? [])
+  const paymentUnavailable = !isPayMethodAvailable(payMethod, availablePayMethods)
+  const comingSoonMessage =
+    paymentUnavailable && payMethod in PAY_METHOD_COMING_SOON_MESSAGE
+      ? PAY_METHOD_COMING_SOON_MESSAGE[
+          payMethod as keyof typeof PAY_METHOD_COMING_SOON_MESSAGE
+        ]
+      : paymentUnavailable
+        ? '해당 결제 수단은 현재 이용할 수 없습니다.'
+        : null
 
   async function finalizePortOnePayment(impUid: string, merchantUid: string) {
     await api.post('/subscriptions/complete', { impUid, merchantUid })
     navigate('/support/complete')
+  }
+
+  async function abandonPendingCheckout() {
+    try {
+      await api.post('/subscriptions/pending/abandon', {})
+    } catch {
+      // 정리 실패해도 결제 UX는 막지 않음 — 다음 /me·start 에서도 정리됨
+    }
   }
 
   async function handleStartPayment() {
@@ -153,23 +194,33 @@ export default function SupportPage() {
               buyerTel: started.phoneNumber || undefined,
               noticeUrl,
             })
-          : await requestTossBilling({
-              impCode: started.impCode,
-              channelKey: started.channelKey,
-              pg: started.pg,
-              merchantUid: started.merchantUid,
-              customerUid: started.customerUid,
-              customerId: started.customerId,
-              amount: billingAmount,
-              orderName: started.orderName,
-              buyerName: user?.username,
-              noticeUrl,
-            })
-
-      // --- 추후 오픈 ---
-      // : await requestNaverBilling({ ... })
-      // : await requestAccountBilling({ ... })
-      // : await requestPhoneBilling({ ... })
+          : started.payMethod === 'PHONE'
+            ? await requestPhoneBilling({
+                impCode: started.impCode,
+                channelKey: started.channelKey,
+                pg: started.pg,
+                merchantUid: started.merchantUid,
+                customerUid: started.customerUid,
+                amount: billingAmount,
+                orderName: started.orderName,
+                ...(started.phoneNumber
+                  ? { phoneNumber: started.phoneNumber }
+                  : {}),
+                buyerName: user?.username,
+                noticeUrl,
+              })
+            : await requestTossBilling({
+                impCode: started.impCode,
+                channelKey: started.channelKey,
+                pg: started.pg,
+                merchantUid: started.merchantUid,
+                customerUid: started.customerUid,
+                customerId: started.customerId,
+                amount: billingAmount,
+                orderName: started.orderName,
+                buyerName: user?.username,
+                noticeUrl,
+              })
 
       if ('redirect' in rsp && rsp.redirect) {
         return
@@ -181,6 +232,7 @@ export default function SupportPage() {
 
       await finalizePortOnePayment(rsp.imp_uid, rsp.merchant_uid)
     } catch (err) {
+      await abandonPendingCheckout()
       setError(getApiErrorMessage(err, '결제 요청에 실패했습니다.'))
     } finally {
       setSubmitting(false)
@@ -196,6 +248,12 @@ export default function SupportPage() {
     setMockModalOpen(false)
     setPendingPayment(null)
     navigate('/support/complete')
+  }
+
+  async function handleMockClose() {
+    setMockModalOpen(false)
+    setPendingPayment(null)
+    await abandonPendingCheckout()
   }
 
   if (loading) {
@@ -214,20 +272,22 @@ export default function SupportPage() {
         기준이며, 해지 시 즉시 중단됩니다.
       </p>
 
-      {isMockMode && (
+      {isMockMode && isPaymentTester && (
         <p className="mt-3 rounded-lg border border-gold-500/30 bg-gold-100/30 px-3 py-2 text-xs text-ink-600">
           현재 <strong>테스트 결제 모드</strong>입니다. 실제 요금이 청구되지 않습니다.
         </p>
       )}
 
-      {paymentConfig.paymentMode === 'portone_test' && (
+      {isPaymentTester && paymentConfig.paymentMode === 'portone_test' && (
         <p className="mt-3 rounded-lg border border-flash-600/20 bg-flash-100/20 px-3 py-2 text-xs text-ink-600">
           PortOne <strong>테스트 연동</strong> 모드입니다. 결제창 검증용으로 사용할 수
           있습니다.
         </p>
       )}
 
-      {paymentConfig.paymentMode !== 'mock' && !paymentConfig.webhookUrl && (
+      {isPaymentTester &&
+        paymentConfig.paymentMode !== 'mock' &&
+        !paymentConfig.webhookUrl && (
         <p className="mt-3 rounded-lg border border-gold-500/30 bg-gold-100/30 px-3 py-2 text-xs text-ink-600">
           정기결제 웹훅 URL이 설정되지 않았습니다. <code>server/.env</code>에{' '}
           <code>API_PUBLIC_URL</code>(ngrok 등)을 추가하고 서버를 재시작하세요.
@@ -260,7 +320,7 @@ export default function SupportPage() {
         <div className="mt-3 grid grid-cols-3 gap-2 sm:gap-3">
           {PAY_METHOD_ROWS.flat().map((method) => {
             const selected = payMethod === method
-            const comingSoon = isComingSoonPayMethod(method)
+            const comingSoon = !isPayMethodAvailable(method, availablePayMethods)
             const brand = PAY_METHOD_BRAND[method as DisplayPayMethod]
             return (
               <button
@@ -316,10 +376,7 @@ export default function SupportPage() {
         open={mockModalOpen}
         payMethod={pendingPayment?.payMethod ?? payMethod}
         amount={pendingPayment?.amount ?? 0}
-        onClose={() => {
-          setMockModalOpen(false)
-          setPendingPayment(null)
-        }}
+        onClose={handleMockClose}
         onComplete={handleMockComplete}
       />
     </div>

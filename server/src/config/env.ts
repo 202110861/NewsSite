@@ -45,12 +45,21 @@ const envSchema = z.object({
   PAYMENT_MODE: z
     .enum(['mock', 'portone_test', 'portone_live'])
     .default('mock'),
+  /** 콤마 구분 아이디. ADMIN은 항상 포함. 예: tester1,tester2 */
+  PAYMENT_TEST_USERNAMES: z.string().optional(),
 })
 
 export const env = envSchema.parse(process.env)
 
 export function isPaymentMockMode(): boolean {
   return env.PAYMENT_MODE === 'mock'
+}
+
+export function getPaymentTestUsernames(): string[] {
+  return (env.PAYMENT_TEST_USERNAMES ?? '')
+    .split(',')
+    .map((name) => name.trim())
+    .filter(Boolean)
 }
 
 export function getPaymentWebhookUrl(): string | undefined {

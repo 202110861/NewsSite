@@ -44,6 +44,14 @@ function formatDate(iso: string) {
   });
 }
 
+function formatDateOnly(iso: string) {
+  return new Date(iso).toLocaleDateString("ko-KR", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+}
+
 export default function MyPage() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -160,44 +168,77 @@ export default function MyPage() {
               </Link>
             </p>
           ) : (
-            <div className="mt-4 rounded-xl border border-ink-900/10 bg-white p-5">
-              <p className="text-sm font-semibold text-ink-700">
-                {subscription.plan.label}
-              </p>
-              <p className="mt-1 text-xl font-bold text-ink-900">
-                {subscription.plan.amount.toLocaleString("ko-KR")}원
-                <span className="text-sm font-normal text-ink-500">/월</span>
-              </p>
-              <p className="mt-2 text-xs text-ink-500">
-                결제 수단: {PAY_METHOD_LABELS[subscription.payMethod]} · 상태:{" "}
-                {subscription.status === "ACTIVE"
-                  ? "이용 중"
-                  : subscription.status === "PAST_DUE"
-                    ? "결제 대기"
-                    : "해지됨"}{" "}
-                · 시작일 {formatDate(subscription.startedAt)}
-              </p>
+            <div className="mt-4 border-t border-ink-900/10 pt-4">
+              <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                <p className="text-base font-bold text-ink-900">
+                  {subscription.plan.label}
+                </p>
+                <p className="text-lg font-bold text-ink-900">
+                  {subscription.plan.amount.toLocaleString("ko-KR")}
+                  <span className="text-sm font-normal text-ink-500">원/월</span>
+                </p>
+              </div>
+              <dl className="mt-4 space-y-2.5 text-sm">
+                <div className="grid grid-cols-[5.5rem_1fr] items-baseline gap-x-3">
+                  <dt className="text-ink-400">결제 수단</dt>
+                  <dd className="font-medium text-ink-800">
+                    {PAY_METHOD_LABELS[subscription.payMethod]}
+                  </dd>
+                </div>
+                <div className="grid grid-cols-[5.5rem_1fr] items-baseline gap-x-3">
+                  <dt className="text-ink-400">상태</dt>
+                  <dd
+                    className={
+                      subscription.status === "ACTIVE"
+                        ? "font-semibold text-ink-900"
+                        : "font-semibold text-gold-600"
+                    }
+                  >
+                    {subscription.status === "ACTIVE"
+                      ? "이용 중"
+                      : subscription.status === "PAST_DUE"
+                        ? "결제 대기"
+                        : "해지됨"}
+                  </dd>
+                </div>
+                <div className="grid grid-cols-[5.5rem_1fr] items-baseline gap-x-3">
+                  <dt className="text-ink-400">시작일</dt>
+                  <dd className="font-medium text-ink-800">
+                    {formatDateOnly(subscription.startedAt)}
+                  </dd>
+                </div>
+              </dl>
               {pendingPayment && subscription.status === "ACTIVE" && (
-                <p className="mt-1 text-xs text-ink-500">
+                <p className="mt-3 text-xs text-ink-500">
                   다음 자동결제 {pendingPayment.amount.toLocaleString("ko-KR")}
                   원 예약됨
-                  {pendingPayment.merchantUid
-                    ? ` (${pendingPayment.merchantUid.slice(0, 20)}…)`
-                    : ""}
                 </p>
               )}
-              {(subscription.status === "ACTIVE" ||
-                subscription.status === "PAST_DUE") && (
+              {subscription.status === "ACTIVE" && (
                 <button
                   type="button"
                   onClick={handleCancelSubscription}
                   disabled={cancelling}
-                  className="mt-4 rounded-lg border border-ink-900/15 px-4 py-2 text-sm font-semibold text-ink-700 hover:bg-paper-100 disabled:opacity-60"
+                  className="mt-4 rounded-lg border border-ink-900/15 bg-white px-4 py-2 text-sm font-semibold text-ink-700 hover:bg-paper-100 disabled:opacity-60"
                 >
-                  {cancelling
-                    ? "해지 중…"
-                    : `${PAY_METHOD_LABELS[subscription.payMethod]} 구독 해지`}
+                  {cancelling ? "해지 중…" : "구독 해지"}
                 </button>
+              )}
+              {subscription.status === "PAST_DUE" && (
+                <div className="mt-4 space-y-3">
+                  <p className="text-xs text-ink-500">
+                    정기 결제에 실패했습니다. 결제 수단을 확인하거나 해지할 수
+                    있습니다.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleCancelSubscription}
+                    disabled={cancelling}
+                    className="rounded-lg border border-ink-900/15 bg-white px-4 py-2 text-sm font-semibold text-ink-700 hover:bg-paper-100 disabled:opacity-60"
+                  >
+                    {cancelling ? "해지 중…" : "구독 해지"}
+                  </button>
+                </div>
               )}
             </div>
           )}

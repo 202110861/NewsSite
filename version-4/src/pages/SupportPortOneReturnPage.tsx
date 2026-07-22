@@ -18,18 +18,34 @@ export default function SupportPortOneReturnPage() {
     const errorCode = params.get('error_code')
     const errorMsg = params.get('error_msg')
 
-    if (errorCode || !impUid || !merchantUid) {
-      setError(errorMsg || '결제가 취소되었거나 실패했습니다.')
-      return
+    let cancelled = false
+
+    async function abandonIfNeeded() {
+      try {
+        await api.post('/subscriptions/pending/abandon', {})
+      } catch {
+        // ignore
+      }
     }
 
-    let cancelled = false
+    if (errorCode || !impUid || !merchantUid) {
+      void abandonIfNeeded().then(() => {
+        if (!cancelled) {
+          setError(errorMsg || '결제가 취소되었거나 실패했습니다.')
+        }
+      })
+      return () => {
+        cancelled = true
+      }
+    }
+
     api
       .post('/subscriptions/complete', { impUid, merchantUid })
       .then(() => {
         if (!cancelled) navigate('/support/complete', { replace: true })
       })
-      .catch((err) => {
+      .catch(async (err) => {
+        await abandonIfNeeded()
         if (!cancelled) {
           setError(getApiErrorMessage(err, '결제 확인에 실패했습니다.'))
         }
