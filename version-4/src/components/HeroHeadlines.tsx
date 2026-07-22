@@ -140,17 +140,17 @@ export default function HeroHeadlines({ articles }: { articles: Article[] }) {
                 <img
                   src={resolveMediaUrl(article.image ?? "")}
                   alt=""
-                  className="inset-0 h-full w-full object-cover opacity-90 transition duration-500 group-hover:scale-105 group-hover:opacity-100"
+                  className="inset-0 h-full opacity-90 transition duration-500 group-hover:scale-105 group-hover:opacity-100"
                   loading={i === 0 ? "eager" : "lazy"}
                   draggable={false}
                 />
-                <div className="absolute inset-0 bg-linear-to-t from-ink-950 via-ink-950/10 to-transparent" />
+                {/* <div className="absolute inset-0 bg-linear-to-t from-ink-950 via-ink-950/10 to-transparent" />
                 <div className="absolute inset-x-0 bottom-0 p-4 sm:p-7">
                   <SectionTag section={article.section} />
                   <h1 className="mt-2 text-lg font-bold leading-snug text-white sm:mt-3 sm:text-2xl lg:text-3xl">
                     {article.title}
                   </h1>
-                </div>
+                </div> */}
               </div>
             </Link>
           ))}
