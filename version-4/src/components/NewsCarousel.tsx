@@ -24,7 +24,7 @@ export default function NewsCarousel({ title, articles, moreHref }: Props) {
   if (articles.length === 0) return null;
 
   return (
-    <section className="mx-auto w-full min-w-0 max-w-6xl px-6 py-3">
+    <section className="mx-auto w-full min-w-0 max-w-6xl px-6 py-2">
       <div className="mb-4 flex items-baseline justify-between border-b-2 border-ink-900 px-4 pb-2.5 sm:px-6">
         <h2 className="font-display text-lg font-black tracking-tight text-ink-900 sm:text-xl">
           {title}
@@ -42,13 +42,13 @@ export default function NewsCarousel({ title, articles, moreHref }: Props) {
       <div className="relative min-w-0">
         <div
           ref={scrollerRef}
-          className="flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-smooth scrollbar-hide px-4 sm:gap-4 sm:px-6"
+          className="flex snap-x snap-mandatory gap-2 overflow-x-auto scroll-smooth scrollbar-hide px-4 sm:px-6"
         >
           {articles.map((a) => (
             <Link
               key={a.id}
               to={`/article/${a.id}`}
-              className="group w-[calc(34%)] shrink-0 snap-start md:w-[calc(33.333%-0.75rem)] lg:w-[calc(19.4%)] "
+              className="group w-[calc(34.5%)] shrink-0 snap-start md:w-[calc(33.333%-0.75rem)] lg:w-[calc(20.3%)] "
             >
               <div className="relative overflow-hidden  bg-ink-100">
                 <img
