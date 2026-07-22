@@ -42,13 +42,13 @@ export default function NewsCarousel({ title, articles, moreHref }: Props) {
       <div className="relative min-w-0">
         <div
           ref={scrollerRef}
-          className="flex snap-x snap-mandatory gap-2 overflow-x-auto scroll-smooth scrollbar-hide px-4 sm:px-6"
+          className="flex snap-x snap-mandatory gap-1.5 overflow-x-auto scroll-smooth scrollbar-hide px-4 sm:px-6"
         >
           {articles.map((a) => (
             <Link
               key={a.id}
               to={`/article/${a.id}`}
-              className="group w-[calc(34.5%)] shrink-0 snap-start md:w-[calc(33.333%-0.75rem)] lg:w-[calc(20.3%)] "
+              className="group w-[calc(34.5%)] shrink-0 snap-start md:w-[calc(33.333%-0.75rem)] lg:w-[calc(20.6%)] "
             >
               <div className="relative overflow-hidden  bg-ink-100">
                 <img
@@ -65,7 +65,7 @@ export default function NewsCarousel({ title, articles, moreHref }: Props) {
                   </span>
                 )}
               </div>
-              <div className="mt-2.5 flex flex-col gap-1.5">
+              <div className="mt-1 flex flex-col gap-1.5">
                 <SectionTag section={a.section} />
                 <h3 className="line-clamp-2 text-sm font-bold leading-snug text-ink-900 group-hover:text-flash-700">
                   {a.title}

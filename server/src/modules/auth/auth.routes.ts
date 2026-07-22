@@ -5,7 +5,13 @@ import { authMiddleware, type AuthRequest } from '../../middlewares/auth.middlew
 import * as authService from './auth.service.js'
 import * as oauthService from './oauth.service.js'
 import * as engagementService from '../engagement/engagement.service.js'
-import { checkUsernameSchema, loginSchema, signupSchema } from './auth.validation.js'
+import {
+  changePasswordSchema,
+  checkUsernameSchema,
+  deleteAccountSchema,
+  loginSchema,
+  signupSchema,
+} from './auth.validation.js'
 
 const REFRESH_COOKIE = 'refreshToken'
 const OAUTH_STATE_COOKIE = oauthService.OAUTH_STATE_COOKIE
@@ -245,6 +251,32 @@ usersRouter.get('/me/comments', authMiddleware, async (req: AuthRequest, res, ne
   try {
     const comments = await engagementService.listMyComments(req.user!.id)
     res.json(comments)
+  } catch (err) {
+    next(err)
+  }
+})
+
+usersRouter.patch('/me/password', authMiddleware, async (req: AuthRequest, res, next) => {
+  try {
+    const { currentPassword, newPassword } = changePasswordSchema.parse(req.body)
+    const result = await authService.changePassword(
+      req.user!.id,
+      currentPassword,
+      newPassword,
+    )
+    res.clearCookie(REFRESH_COOKIE, { path: '/api/auth' })
+    res.json(result)
+  } catch (err) {
+    next(err)
+  }
+})
+
+usersRouter.delete('/me', authMiddleware, async (req: AuthRequest, res, next) => {
+  try {
+    const { password } = deleteAccountSchema.parse(req.body)
+    const result = await authService.deleteAccount(req.user!.id, password)
+    res.clearCookie(REFRESH_COOKIE, { path: '/api/auth' })
+    res.json(result)
   } catch (err) {
     next(err)
   }
