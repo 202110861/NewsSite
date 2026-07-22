@@ -15,6 +15,8 @@ import MyPage from "./pages/MyPage";
 import AdminReviewListPage from "./pages/admin/AdminReviewListPage";
 import AdminArticleFormPage from "./pages/admin/AdminArticleFormPage";
 import PolicyPage from "./pages/PolicyPage";
+import AccountDeletionGuidePage from "./pages/AccountDeletionGuidePage";
+
 function App() {
   return (
     <Layout>
@@ -26,6 +28,7 @@ function App() {
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/auth/callback" element={<AuthCallbackPage />} />
+        <Route path="/account-deletion" element={<AccountDeletionGuidePage />} />
         <Route
           path="/mypage"
           element={
