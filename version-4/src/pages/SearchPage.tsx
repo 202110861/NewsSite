@@ -131,7 +131,9 @@ export default function SearchPage() {
                   </div>
                 )}
                 <div className="flex min-w-0 flex-col gap-1.5 w-full">
-                  <SectionTag section={a.section} />
+                  <div className="flex justify-between w-20">
+                    <SectionTag section={a.section} />
+                  </div>
                   <h2 className="line-clamp-2 text-sm font-bold leading-snug text-ink-900 group-hover:text-flash-700 sm:text-base">
                     {a.title}
                   </h2>

@@ -15,7 +15,7 @@ export default function NewsCarousel({ title, articles, moreHref }: Props) {
 
   return (
     <section className="mx-auto w-full min-w-0 max-w-6xl px-6 py-2">
-      <div className="mb-4 flex items-baseline justify-between border-b-2 border-ink-900 px-4 pb-2.5 sm:px-6">
+      <div className="mb-4 flex items-baseline justify-between border-b-2 border-ink-900 px-2 pb-2.5">
         <h2 className="font-display text-lg font-black tracking-tight text-ink-900 sm:text-xl">
           {title}
         </h2>

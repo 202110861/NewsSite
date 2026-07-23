@@ -9,9 +9,11 @@ articlesRouter.get("/", async (req, res, next) => {
     const sectionId =
       typeof req.query.sectionId === "string" ? req.query.sectionId : undefined;
     const limit = req.query.limit ? Number(req.query.limit) : undefined;
+    const page = req.query.page ? Number(req.query.page) : undefined;
     const articles = await articlesService.listPublishedArticles({
       sectionId,
-      limit,
+      limit: Number.isFinite(limit) ? limit : undefined,
+      page: Number.isFinite(page) ? page : undefined,
     });
     res.json(articles);
   } catch (err) {

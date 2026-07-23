@@ -408,7 +408,9 @@ export default function ArticleDetailPage() {
                   ))}
                 </select>
               ) : (
-                <SectionTag section={article.section} />
+                <div className="flex justify-between w-20">
+                  <SectionTag section={article.section} />
+                </div>
               )}
 
               {isEditing ? (
@@ -492,7 +494,7 @@ export default function ArticleDetailPage() {
         <div className="mt-6 flex gap-6 xl:gap-8">
           {!isEditing && !user && <ArticleSocialLoginRail />}
 
-          <article className="min-w-0 flex-1">
+          <article className="flex min-w-0 flex-1 flex-col">
             {!isEditing &&
               article.videoUrl &&
               youtubeEmbedUrl(article.videoUrl) && (
@@ -515,7 +517,7 @@ export default function ArticleDetailPage() {
                 onChange={setEditBlocks}
               />
             ) : (
-              <div className="flex flex-col gap-4">
+              <div className="flex flex-1 flex-col gap-4">
                 {article.subtitle && (
                   <p className="text-lg font-bold">{article.subtitle}</p>
                 )}
