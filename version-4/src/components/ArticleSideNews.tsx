@@ -86,7 +86,7 @@ export default function ArticleSideNews({
   publisher,
   latest,
   popular,
-  className = "mt-7",
+  className,
 }: ArticleSideNewsProps) {
   return (
     <aside
