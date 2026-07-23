@@ -30,16 +30,16 @@ export function blockToHtml(block: BodyBlockInput): string {
 
   if (block.type === "IMAGE") {
     const src = blockSrc(block);
-    return `<figure contenteditable="false" data-block-type="IMAGE" data-media-url="${block.mediaUrl ?? ""}" data-file-path="${block.filePath ?? ""}" data-caption="${escapeHtml(block.caption ?? "")}"><div class="overflow-hidden rounded-lg bg-ink-100"><img src="${src}" alt="${escapeHtml(block.caption ?? "")}" class="w-full object-cover" /></div></figure>`;
+    return `<figure draggable="true" contenteditable="false" data-block-type="IMAGE" data-media-url="${block.mediaUrl ?? ""}" data-file-path="${block.filePath ?? ""}" data-caption="${escapeHtml(block.caption ?? "")}"><div class="overflow-hidden rounded-lg bg-ink-100"><img src="${src}" alt="${escapeHtml(block.caption ?? "")}" class="w-full object-cover" draggable="false" /></div></figure>`;
   }
 
   const src = blockSrc(block);
   if (isYoutubeUrl(block.mediaUrl ?? "") && block.mediaUrl) {
     const youtubeId = extractYoutubeId(block.mediaUrl) ?? "";
-    return `<figure contenteditable="false" data-block-type="VIDEO" data-media-url="${block.mediaUrl}" data-file-path="" data-caption="${escapeHtml(block.caption ?? "")}"><div class="overflow-hidden rounded-lg bg-ink-100"><div class="aspect-video"><iframe src="https://www.youtube.com/embed/${youtubeId}" class="h-full w-full" allowfullscreen></iframe></div></div></figure>`;
+    return `<figure draggable="true" contenteditable="false" data-block-type="VIDEO" data-media-url="${block.mediaUrl}" data-file-path="" data-caption="${escapeHtml(block.caption ?? "")}"><div class="overflow-hidden rounded-lg bg-ink-100"><div class="aspect-video"><iframe src="https://www.youtube.com/embed/${youtubeId}" class="h-full w-full" allowfullscreen></iframe></div></div></figure>`;
   }
 
-  return `<figure contenteditable="false" data-block-type="VIDEO" data-media-url="${block.mediaUrl ?? ""}" data-file-path="${block.filePath ?? ""}" data-caption="${escapeHtml(block.caption ?? "")}"><div class="overflow-hidden rounded-lg bg-ink-100"><video src="${src}" controls class="w-full"></video></div></figure>`;
+  return `<figure draggable="true" contenteditable="false" data-block-type="VIDEO" data-media-url="${block.mediaUrl ?? ""}" data-file-path="${block.filePath ?? ""}" data-caption="${escapeHtml(block.caption ?? "")}"><div class="overflow-hidden rounded-lg bg-ink-100"><video src="${src}" controls class="w-full" draggable="false"></video></div></figure>`;
 }
 
 export function blocksToHtml(blocks: BodyBlockInput[]): string {
@@ -241,4 +241,129 @@ export function insertHtmlInEditor(
 
   selection.removeAllRanges();
   selection.addRange(cursor);
+}
+
+export function getFigureFromEventTarget(
+  target: EventTarget | null,
+): HTMLElement | null {
+  if (!(target instanceof Element)) return null;
+  const figure = target.closest("figure[data-block-type]");
+  return figure instanceof HTMLElement ? figure : null;
+}
+
+export function figureToBlock(figure: HTMLElement): BodyBlockInput | null {
+  const type = figure.dataset.blockType;
+  if (type !== "IMAGE" && type !== "VIDEO") return null;
+  return {
+    type,
+    mediaUrl: figure.dataset.mediaUrl || undefined,
+    filePath: figure.dataset.filePath || undefined,
+    caption: figure.dataset.caption || undefined,
+  };
+}
+
+export function caretRangeFromPoint(x: number, y: number): Range | null {
+  const doc = document as Document & {
+    caretRangeFromPoint?: (x: number, y: number) => Range | null;
+    caretPositionFromPoint?: (
+      x: number,
+      y: number,
+    ) => { offsetNode: Node; offset: number } | null;
+  };
+
+  if (typeof doc.caretRangeFromPoint === "function") {
+    return doc.caretRangeFromPoint(x, y);
+  }
+
+  const pos = doc.caretPositionFromPoint?.(x, y);
+  if (!pos) return null;
+
+  const range = document.createRange();
+  range.setStart(pos.offsetNode, pos.offset);
+  range.collapse(true);
+  return range;
+}
+
+function resolveDropRange(
+  editor: HTMLElement,
+  figure: HTMLElement,
+  clientX: number,
+  clientY: number,
+): Range {
+  let range = caretRangeFromPoint(clientX, clientY);
+
+  if (range && figure.contains(range.commonAncestorContainer)) {
+    range = null;
+  }
+
+  if (range && !editor.contains(range.commonAncestorContainer)) {
+    range = null;
+  }
+
+  if (range) return range;
+
+  const fallback = document.createRange();
+  const rect = figure.getBoundingClientRect();
+  const dropBefore = clientY < rect.top + rect.height / 2;
+  const prev = figure.previousSibling;
+  const next = figure.nextSibling;
+
+  if (dropBefore && prev) {
+    fallback.setStartAfter(prev);
+  } else if (!dropBefore && next) {
+    fallback.setStartBefore(next);
+  } else if (dropBefore && next) {
+    fallback.setStartBefore(next);
+  } else if (prev) {
+    fallback.setStartAfter(prev);
+  } else {
+    fallback.selectNodeContents(editor);
+    fallback.collapse(dropBefore);
+    return fallback;
+  }
+
+  fallback.collapse(true);
+  return fallback;
+}
+
+/** 드래그한 figure를 drop 위치로 이동(원본 제거 + 올바른 HTML 재삽입) */
+export function moveFigureToDropPoint(
+  editor: HTMLElement,
+  figure: HTMLElement,
+  clientX: number,
+  clientY: number,
+): boolean {
+  const block = figureToBlock(figure);
+  if (!block || !editor.contains(figure)) return false;
+
+  const dropRange = resolveDropRange(editor, figure, clientX, clientY);
+  const prev = figure.previousSibling;
+  const next = figure.nextSibling;
+  figure.remove();
+
+  let range = dropRange;
+  try {
+    void range.commonAncestorContainer;
+    if (!editor.contains(range.commonAncestorContainer)) {
+      throw new Error("range outside editor");
+    }
+  } catch {
+    range = document.createRange();
+    if (prev && editor.contains(prev)) {
+      range.setStartAfter(prev);
+    } else if (next && editor.contains(next)) {
+      range.setStartBefore(next);
+    } else {
+      range.selectNodeContents(editor);
+      range.collapse(false);
+    }
+    range.collapse(true);
+  }
+
+  insertHtmlInEditor(
+    editor,
+    blockToHtml(block) + appendEditorParagraph(),
+    range,
+  );
+  return true;
 }

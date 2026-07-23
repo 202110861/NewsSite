@@ -162,17 +162,39 @@ export default function HeroHeadlines({ articles }: { articles: Article[] }) {
               type="button"
               onClick={goPrev}
               aria-label="이전 헤드라인"
-              className="absolute left-2 top-1/2 z-10 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-ink-950/50 text-lg text-white backdrop-blur-sm hover:bg-ink-950/70 sm:left-3 lg:flex"
+              className="absolute left-2 top-1/2 z-10 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-ink-950/20 bg-white/50 text-black/70 backdrop-blur-sm hover:text-black hover:bg-white/70 sm:left-3 lg:flex"
             >
-              ‹
+              <svg
+                aria-hidden
+                viewBox="0 0 24 24"
+                className="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M15 18l-6-6 6-6" />
+              </svg>
             </button>
             <button
               type="button"
               onClick={goNext}
               aria-label="다음 헤드라인"
-              className="absolute right-2 top-1/2 z-10 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-ink-950/50 text-lg text-white backdrop-blur-sm hover:bg-ink-950/70 sm:right-3 lg:flex"
+              className="absolute right-2 top-1/2 z-10 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-ink-950/20 bg-white/50 text-black/70 backdrop-blur-sm hover:text-black hover:bg-white/70 sm:right-3 lg:flex"
             >
-              ›
+              <svg
+                aria-hidden
+                viewBox="0 0 24 24"
+                className="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M9 18l6-6-6-6" />
+              </svg>
             </button>
 
             <div className="absolute bottom-3 right-3 z-10 flex gap-1.5 sm:bottom-4 sm:right-4">
