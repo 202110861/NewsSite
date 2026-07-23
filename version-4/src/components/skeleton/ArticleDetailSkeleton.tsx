@@ -51,7 +51,7 @@ export default function ArticleDetailSkeleton() {
           </div>
         </article>
 
-        <ArticleSideNewsSkeleton />
+        <ArticleSideNewsSkeleton className="mt-2" />
       </div>
     </div>
   );
