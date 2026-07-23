@@ -4,8 +4,8 @@ import { sections } from "../data/sections";
 import { MastheadLinks } from "./MastheadBar";
 
 function navLinkClass(active: boolean) {
-  return `block whitespace-nowrap px-2 py-3 text-center text-xs font-bold tracking-tight transition lg:px-1.5 lg:py-2 lg:text-sm xl:px-2.5 ${
-    active ? "bg-flash-600 text-white" : "text-paper-200 hover:bg-ink-800"
+  return `block whitespace-nowrap rounded-sm px-2 py-3 text-center text-xs font-bold tracking-tight transition lg:px-1.5 lg:py-2 lg:text-sm xl:px-2.5 ${
+    active ? "bg-ink-500 text-white" : "text-paper-200 hover:bg-ink-500"
   }`;
 }
 
@@ -80,7 +80,7 @@ export default function CategoryNav({
             />
           </Link>
 
-          <ul className="flex items-center justify-center">
+          <ul className="flex items-center justify-center ">
             {sections.map((s) => (
               <li key={s.id} className="shrink-0">
                 <Link

@@ -2,27 +2,27 @@ import type { SectionId } from "../types/news";
 import { sectionMap } from "../data/sections";
 
 const accentBg: Record<SectionId, string> = {
-  politics: 'bg-section-politics',
-  economy: 'bg-section-economy',
-  society: 'bg-section-society',
-  culture: 'bg-section-culture',
-  entertainment: 'bg-section-entertainment',
-  local: 'bg-section-local',
-  publisher: 'bg-section-publisher',
-  video: 'bg-section-video',
-  cardNews: 'bg-section-cardNews',
-  shorts: 'bg-section-shorts',
-}
+  politics: "bg-section-politics",
+  economy: "bg-section-economy",
+  society: "bg-section-society",
+  culture: "bg-section-culture",
+  entertainment: "bg-section-entertainment",
+  local: "bg-section-local",
+  publisher: "bg-section-publisher",
+  video: "bg-section-video",
+  cardNews: "bg-section-cardNews",
+  shorts: "bg-section-shorts",
+};
 
 export default function SectionTag({ section }: { section: SectionId }) {
   const meta = sectionMap[section];
   if (!meta) return null;
 
   return (
-    <span
-      className={`inline-flex items-center rounded-sm px-1.5 py-0.5 text-[11px] font-bold tracking-tight text-white ${accentBg[section]}`}
+    <div
+      className={`leading-none rounded-sm tracking-tight flex items-center ${accentBg[section]}`}
     >
-      {meta.label}
-    </span>
+      <span className="text-[11px] font-bold text-white px-1.5 py-1">{meta.label}</span>
+    </div>
   );
 }
