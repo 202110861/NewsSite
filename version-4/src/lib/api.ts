@@ -162,6 +162,10 @@ export interface PaymentConfig {
   kakaoTestUsesZeroAmount: boolean;
   accountTestUsesZeroAmount: boolean;
   webhookUrl?: string;
+  /** ADMIN 또는 PAYMENT_TEST_USERNAMES — 테스트 결제 UI 허용 */
+  paymentTestAccess?: boolean;
+  /** 이 계정에서 실제 결제 가능한 수단 */
+  availablePayMethods?: PayMethod[];
 }
 
 export type PayMethod =
@@ -219,6 +223,14 @@ export function isComingSoonPayMethod(
   method: PayMethod,
 ): method is ComingSoonPayMethod {
   return (COMING_SOON_PAY_METHODS as readonly string[]).includes(method);
+}
+
+/** 서버 availablePayMethods 기준 — 테스트 계정(admin)이면 휴대폰·토스·카카오 활성 */
+export function isPayMethodAvailable(
+  method: PayMethod,
+  availablePayMethods: readonly PayMethod[] | undefined,
+): boolean {
+  return (availablePayMethods ?? []).includes(method);
 }
 
 export interface Advertisement {

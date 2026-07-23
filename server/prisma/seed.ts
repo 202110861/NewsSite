@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client'
-import { seedAdminUser, seedSections } from './seed-shared.js'
+import { seedAdminUser, seedPaymentTestUser, seedSections } from './seed-shared.js'
 
 const prisma = new PrismaClient()
 
@@ -43,6 +43,7 @@ async function main() {
   })
 
   await seedAdminUser(prisma)
+  await seedPaymentTestUser(prisma)
 
   const now = new Date()
   const end = new Date(now)

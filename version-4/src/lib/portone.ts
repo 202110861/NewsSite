@@ -282,7 +282,7 @@ export async function requestPhoneBilling(params: {
   customerUid: string
   amount: number
   orderName: string
-  phoneNumber: string
+  phoneNumber?: string
   buyerName?: string
   noticeUrl?: string
 }): Promise<PortOneBillingResult> {
@@ -297,7 +297,7 @@ export async function requestPhoneBilling(params: {
     name: params.orderName,
     amount: params.amount,
     customer_uid: params.customerUid,
-    buyer_tel: params.phoneNumber,
+    ...(params.phoneNumber ? { buyer_tel: params.phoneNumber } : {}),
     buyer_name: params.buyerName,
     company: '경제인뉴스',
     period: {

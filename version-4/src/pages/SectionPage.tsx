@@ -207,7 +207,6 @@ export default function SectionPage() {
               </>
             )}
           </div>
-
           <ArticleSideNews
             publisher={publisherNews}
             latest={latestNews}
