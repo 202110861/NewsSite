@@ -1,4 +1,3 @@
-import { useRef } from "react";
 import { Link } from "react-router-dom";
 import type { Article } from "../types/news";
 import SectionTag from "./SectionTag";
@@ -11,16 +10,6 @@ interface Props {
 }
 
 export default function NewsCarousel({ title, articles, moreHref }: Props) {
-  const scrollerRef = useRef<HTMLDivElement>(null);
-
-  function scrollBy(dir: 1 | -1) {
-    const el = scrollerRef.current;
-    if (!el) return;
-    const card = el.querySelector<HTMLElement>(":scope > a");
-    const gap = Number.parseFloat(getComputedStyle(el).columnGap || "0") || 0;
-    const step = card ? card.offsetWidth + gap : el.clientWidth * 0.85;
-    el.scrollBy({ left: dir * step, behavior: "smooth" });
-  }
 
   if (articles.length === 0) return null;
 
@@ -40,9 +29,8 @@ export default function NewsCarousel({ title, articles, moreHref }: Props) {
         )}
       </div>
 
-      <div className="relative min-w-0 px-4 sm:px-6">
+      <div className="relative min-w-0">
         <div
-          ref={scrollerRef}
           className="flex snap-x snap-mandatory gap-1.5 overflow-x-auto scroll-smooth scrollbar-hide"
         >
           {articles.map((a) => (
@@ -75,23 +63,6 @@ export default function NewsCarousel({ title, articles, moreHref }: Props) {
             </Link>
           ))}
         </div>
-
-        <button
-          type="button"
-          onClick={() => scrollBy(-1)}
-          aria-label="이전"
-          className="absolute -left-3 top-1/3 hidden h-9 w-9 items-center justify-center rounded-full border border-ink-900/10 bg-paper-50 text-ink-700 shadow-md hover:text-flash-600 lg:flex"
-        >
-          ‹
-        </button>
-        <button
-          type="button"
-          onClick={() => scrollBy(1)}
-          aria-label="다음"
-          className="absolute -right-3 top-1/3 hidden h-9 w-9 items-center justify-center rounded-full border border-ink-900/10 bg-paper-50 text-ink-700 shadow-md hover:text-flash-600 lg:flex"
-        >
-          ›
-        </button>
       </div>
     </section>
   );
