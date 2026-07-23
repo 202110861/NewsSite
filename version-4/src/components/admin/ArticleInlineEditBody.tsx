@@ -7,8 +7,10 @@ import {
   appendEditorParagraph,
   blockToHtml,
   blocksToHtml,
+  getFigureFromEventTarget,
   htmlToBlocks,
   insertHtmlInEditor,
+  moveFigureToDropPoint,
   saveEditorSelection,
 } from "../../utils/bodyEditorHtml";
 
@@ -33,7 +35,10 @@ function findAdjacentFigure(
   if (node.nodeType === Node.TEXT_NODE) {
     if (direction === "before" && startOffset === 0) {
       node = node.previousSibling;
-    } else if (direction === "after" && startOffset === (node.textContent?.length ?? 0)) {
+    } else if (
+      direction === "after" &&
+      startOffset === (node.textContent?.length ?? 0)
+    ) {
       node = node.nextSibling;
     } else {
       return null;
@@ -41,11 +46,15 @@ function findAdjacentFigure(
   } else if (node instanceof HTMLElement) {
     node =
       direction === "before"
-        ? node.childNodes[startOffset - 1] ?? null
-        : node.childNodes[startOffset] ?? null;
+        ? (node.childNodes[startOffset - 1] ?? null)
+        : (node.childNodes[startOffset] ?? null);
   }
 
-  if (node instanceof HTMLElement && node.tagName === "FIGURE" && node.dataset.blockType) {
+  if (
+    node instanceof HTMLElement &&
+    node.tagName === "FIGURE" &&
+    node.dataset.blockType
+  ) {
     return node;
   }
 
@@ -54,7 +63,9 @@ function findAdjacentFigure(
     (node.tagName === "P" || node.tagName === "DIV")
   ) {
     const sibling =
-      direction === "before" ? node.previousElementSibling : node.nextElementSibling;
+      direction === "before"
+        ? node.previousElementSibling
+        : node.nextElementSibling;
     if (
       sibling instanceof HTMLElement &&
       sibling.tagName === "FIGURE" &&
@@ -85,6 +96,7 @@ export default function ArticleInlineEditBody({ blocks, onChange }: Props) {
   const editorRef = useRef<HTMLDivElement>(null);
   const skipRender = useRef(false);
   const lastSelectionRef = useRef<Range | null>(null);
+  const draggingFigureRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     if (!editorRef.current || skipRender.current) return;
@@ -117,6 +129,38 @@ export default function ArticleInlineEditBody({ blocks, onChange }: Props) {
     requestAnimationFrame(() => {
       skipRender.current = false;
     });
+  }
+
+  function handleDragStart(e: React.DragEvent<HTMLDivElement>) {
+    const figure = getFigureFromEventTarget(e.target);
+    if (!figure || !editorRef.current?.contains(figure)) return;
+    draggingFigureRef.current = figure;
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", "figure-move");
+  }
+
+  function handleDragOver(e: React.DragEvent<HTMLDivElement>) {
+    if (!draggingFigureRef.current) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+  }
+
+  function handleDrop(e: React.DragEvent<HTMLDivElement>) {
+    const figure = draggingFigureRef.current;
+    const editor = editorRef.current;
+    draggingFigureRef.current = null;
+    if (!figure || !editor) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (moveFigureToDropPoint(editor, figure, e.clientX, e.clientY)) {
+      serialize();
+    }
+  }
+
+  function handleDragEnd() {
+    draggingFigureRef.current = null;
   }
 
   async function handlePaste(e: React.ClipboardEvent<HTMLDivElement>) {
@@ -194,7 +238,11 @@ export default function ArticleInlineEditBody({ blocks, onChange }: Props) {
       onBlur={serialize}
       onPaste={handlePaste}
       onKeyDown={handleKeyDown}
-      className="mt-7 min-h-[200px] w-full text-base leading-[1.85] text-ink-800 outline-none focus:ring-2 focus:ring-flash-600/20 [&_figure]:my-4 [&_p]:min-h-[1.5em] [&_p]:whitespace-pre-line"
+      onDragStart={handleDragStart}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+      onDragEnd={handleDragEnd}
+      className="mt-7 min-h-[200px] w-full text-base leading-[1.85] text-ink-800 outline-none focus:ring-2 focus:ring-flash-600/20 [&_figure]:my-4 [&_figure]:cursor-grab [&_figure]:active:cursor-grabbing [&_p]:min-h-[1.5em] [&_p]:whitespace-pre-line"
       data-placeholder="본문을 입력하세요. 이미지는 붙여넣기(Ctrl+V)로 추가할 수 있습니다."
     />
   );
