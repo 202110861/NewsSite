@@ -5,15 +5,41 @@ import { articleInclude, toFrontendArticle } from "./article.mapper.js";
 export async function listPublishedArticles(params?: {
   sectionId?: string;
   limit?: number;
+  page?: number;
 }) {
+  const where = {
+    status: "PUBLISHED" as const,
+    ...(params?.sectionId ? { sectionId: params.sectionId } : {}),
+  };
+  const limit = Math.min(Math.max(params?.limit ?? 100, 1), 100);
+
+  if (params?.page != null) {
+    const page = Math.max(params.page, 1);
+    const [articles, total] = await Promise.all([
+      prisma.article.findMany({
+        where,
+        include: articleInclude,
+        orderBy: { publishedAt: "desc" },
+        take: limit,
+        skip: (page - 1) * limit,
+      }),
+      prisma.article.count({ where }),
+    ]);
+
+    return {
+      articles: articles.map(toFrontendArticle),
+      total,
+      page,
+      limit,
+      totalPages: Math.max(1, Math.ceil(total / limit)),
+    };
+  }
+
   const articles = await prisma.article.findMany({
-    where: {
-      status: "PUBLISHED",
-      ...(params?.sectionId ? { sectionId: params.sectionId } : {}),
-    },
+    where,
     include: articleInclude,
     orderBy: { publishedAt: "desc" },
-    take: params?.limit ?? 100,
+    take: limit,
   });
   return articles.map(toFrontendArticle);
 }

@@ -1,17 +1,26 @@
-import { Link, Navigate, useParams } from "react-router-dom";
+import { Link, Navigate, useParams, useSearchParams } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { fetchArticles } from "../lib/articles";
+import { fetchArticles, fetchArticlesPage } from "../lib/articles";
 import { sectionMap } from "../data/sections";
 import SectionTag from "../components/SectionTag";
 import ArticleSideNews from "../components/ArticleSideNews";
+import Pagination from "../components/Pagination";
 import SeoHead from "../components/SeoHead";
 import { SectionPageSkeleton } from "../components/skeleton";
 import { resolveMediaUrl } from "../utils/media";
 import type { Article } from "../types/news";
 
+const PAGE_SIZE = 12;
+
 export default function SectionPage() {
   const { sectionId } = useParams<{ sectionId: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const pageParam = Number(searchParams.get("page") ?? "1");
+  const page = Number.isFinite(pageParam) && pageParam > 0 ? pageParam : 1;
+
   const [articles, setArticles] = useState<Article[]>([]);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const [publisherNews, setPublisherNews] = useState<Article[]>([]);
   const [latestNews, setLatestNews] = useState<Article[]>([]);
   const [popularNews, setPopularNews] = useState<Article[]>([]);
@@ -21,7 +30,7 @@ export default function SectionPage() {
 
   useEffect(() => {
     window.scrollTo(0, 0);
-  }, [sectionId]);
+  }, [sectionId, page]);
 
   useEffect(() => {
     if (!sectionId || !meta) return;
@@ -29,14 +38,48 @@ export default function SectionPage() {
     let cancelled = false;
     setLoading(true);
 
+    fetchArticlesPage({ sectionId, limit: PAGE_SIZE, page })
+      .then((data) => {
+        if (cancelled) return;
+        setArticles(data.articles);
+        setTotal(data.total);
+        setTotalPages(data.totalPages);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setArticles([]);
+          setTotal(0);
+          setTotalPages(1);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [sectionId, meta, page]);
+
+  useEffect(() => {
+    if (loading || totalPages < 1 || page <= totalPages) return;
+    setSearchParams(
+      totalPages === 1 ? {} : { page: String(totalPages) },
+      { replace: true },
+    );
+  }, [loading, page, totalPages, setSearchParams]);
+
+  useEffect(() => {
+    if (!sectionId || !meta) return;
+
+    let cancelled = false;
+
     Promise.all([
-      fetchArticles({ sectionId, limit: 100 }),
       fetchArticles({ sectionId: "publisher", limit: 5 }),
       fetchArticles({ limit: 40 }),
     ])
-      .then(([sectionArticles, publisher, sidePool]) => {
+      .then(([publisher, sidePool]) => {
         if (cancelled) return;
-        setArticles(sectionArticles);
         setPublisherNews(publisher);
         setLatestNews(sidePool.slice(0, 5));
         setPopularNews(
@@ -47,20 +90,20 @@ export default function SectionPage() {
       })
       .catch(() => {
         if (!cancelled) {
-          setArticles([]);
           setPublisherNews([]);
           setLatestNews([]);
           setPopularNews([]);
         }
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
       });
 
     return () => {
       cancelled = true;
     };
   }, [sectionId, meta]);
+
+  function handlePageChange(nextPage: number) {
+    setSearchParams(nextPage <= 1 ? {} : { page: String(nextPage) });
+  }
 
   if (!sectionId || !meta) {
     return <Navigate to="/" replace />;
@@ -94,76 +137,84 @@ export default function SectionPage() {
           <span>›</span>
           <span>{meta.label}</span>
         </nav>
-      <div className="grid min-w-0 xl:grid-cols-[minmax(0,1fr)_16rem] xl:gap-x-6">
-        <div className="flex items-baseline justify-between border-b-2 border-ink-900 pb-3 xl:col-start-1">
-          <h1 className="font-display text-2xl font-black tracking-tight text-ink-900 sm:text-3xl">
-            {meta.label}
-          </h1>
-          <span className="text-sm text-ink-500">총 {articles.length}건</span>
-        </div>
-        <div className="min-w-0 pt-6 xl:col-start-1 xl:row-start-2">
-          {articles.length === 0 ? (
-            <div className="flex flex-col items-center justify-center gap-2 rounded-lg bg-paper-100 py-20 text-center">
-              <p className="text-base font-semibold text-ink-700">
-                아직 등록된 {meta.label} 기사가 없습니다.
-              </p>
-              <p className="text-sm text-ink-500">
-                곧 새로운 소식으로 채워드릴게요.
-              </p>
-            </div>
-          ) : (
-            <div className="grid gap-x-5 gap-y-7 sm:grid-cols-2 lg:grid-cols-3">
-              {articles.map((a) => (
-                <Link key={a.id} to={`/article/${a.id}`} className="group">
-                  <div className="relative overflow-hidden rounded-md bg-ink-100">
-                    <img
-                      src={resolveMediaUrl(a.image ?? "")}
-                      alt=""
-                      className="aspect-4/3 h-full transition duration-500 group-hover:scale-105"
-                      loading="lazy"
-                    />
-                    {a.isVideo && (
-                      <span className="absolute inset-0 flex items-center justify-center">
-                        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-ink-950/60 text-white backdrop-blur-sm">
-                          ▶
-                        </span>
-                      </span>
-                    )}
-                  </div>
-                  <div className="mt-2.5 flex flex-col gap-1.5">
-                    <SectionTag section={a.section} />
-                    <h2 className="line-clamp-2 text-sm font-bold leading-snug text-ink-900 group-hover:text-flash-700 sm:text-base">
-                      {a.title}
-                    </h2>
-                    {a.excerpt && (
-                      <p className="line-clamp-2 text-xs text-ink-500">
-                        {a.excerpt}
-                      </p>
-                    )}
-                    <time
-                      dateTime={a.publishedAt}
-                      className="text-xs text-ink-500"
-                    >
-                      {new Date(a.publishedAt).toLocaleString("ko-KR", {
-                        year: "numeric",
-                        month: "2-digit",
-                        day: "2-digit",
-                      })}
-                    </time>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          )}
-        </div>
+        <div className="grid min-w-0 xl:grid-cols-[minmax(0,1fr)_16rem] xl:gap-x-6">
+          <div className="flex items-baseline justify-between border-b-2 border-ink-900 pb-3 xl:col-start-1">
+            <h1 className="font-display text-2xl font-black tracking-tight text-ink-900 sm:text-3xl">
+              {meta.label}
+            </h1>
+            <span className="text-sm text-ink-500">총 {total}건</span>
+          </div>
+          <div className="min-w-0 pt-6 xl:col-start-1 xl:row-start-2">
+            {articles.length === 0 ? (
+              <div className="flex flex-col items-center justify-center gap-2 rounded-lg bg-paper-100 py-20 text-center">
+                <p className="text-base font-semibold text-ink-700">
+                  아직 등록된 {meta.label} 기사가 없습니다.
+                </p>
+                <p className="text-sm text-ink-500">
+                  곧 새로운 소식으로 채워드릴게요.
+                </p>
+              </div>
+            ) : (
+              <>
+                <div className="grid gap-x-5 gap-y-7 sm:grid-cols-2 lg:grid-cols-3">
+                  {articles.map((a) => (
+                    <Link key={a.id} to={`/article/${a.id}`} className="group">
+                      <div className="relative overflow-hidden rounded-md bg-ink-100">
+                        <img
+                          src={resolveMediaUrl(a.image ?? "")}
+                          alt=""
+                          className="aspect-4/3 h-full transition duration-500 group-hover:scale-105"
+                          loading="lazy"
+                        />
+                        {a.isVideo && (
+                          <span className="absolute inset-0 flex items-center justify-center">
+                            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-ink-950/60 text-white backdrop-blur-sm">
+                              ▶
+                            </span>
+                          </span>
+                        )}
+                      </div>
+                      <div className="mt-2.5 flex flex-col gap-1.5">
+                        <SectionTag section={a.section} />
+                        <h2 className="line-clamp-2 text-sm font-bold leading-snug text-ink-900 group-hover:text-flash-700 sm:text-base">
+                          {a.title}
+                        </h2>
+                        {a.excerpt && (
+                          <p className="line-clamp-2 text-xs text-ink-500">
+                            {a.excerpt}
+                          </p>
+                        )}
+                        <time
+                          dateTime={a.publishedAt}
+                          className="text-xs text-ink-500"
+                        >
+                          {new Date(a.publishedAt).toLocaleString("ko-KR", {
+                            year: "numeric",
+                            month: "2-digit",
+                            day: "2-digit",
+                          })}
+                        </time>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
 
-        <ArticleSideNews
-          publisher={publisherNews}
-          latest={latestNews}
-          popular={popularNews}
-          className="mt-0 xl:col-start-2 xl:row-start-2"
-        />
-      </div>
+                <Pagination
+                  page={page}
+                  totalPages={totalPages}
+                  onChange={handlePageChange}
+                />
+              </>
+            )}
+          </div>
+
+          <ArticleSideNews
+            publisher={publisherNews}
+            latest={latestNews}
+            popular={popularNews}
+            className="mt-0 xl:col-start-2 xl:row-start-2"
+          />
+        </div>
       </section>
     </>
   );
