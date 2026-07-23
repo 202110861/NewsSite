@@ -683,6 +683,7 @@ export default function ArticleDetailPage() {
               publisher={publisherNews}
               latest={latestNews}
               popular={popularNews}
+              className="mt-2"
             />
           )}
         </div>

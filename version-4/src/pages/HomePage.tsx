@@ -156,6 +156,7 @@ export default function HomePage() {
                   publisher={publisherNews}
                   latest={latestNews}
                   popular={popularNews}
+                  className="mt-7"
                 />
               </div>
 
