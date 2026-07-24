@@ -138,7 +138,12 @@ export function blocksToArticleBody(
 export function mergeArticleWithBlocks(
   article: Article,
   blocks: BodyBlockInput[],
-  patch: { title: string; sectionId: string; subtitle?: string },
+  patch: {
+    title: string;
+    sectionId: string;
+    subtitle?: string;
+    isAI?: boolean;
+  },
 ): Article {
   const cover = deriveCoverFromBlocks(blocks);
   const subtitle = patch.subtitle?.trim() || undefined;
@@ -153,5 +158,6 @@ export function mergeArticleWithBlocks(
     image: cover.image,
     isVideo: cover.isVideo,
     videoUrl: cover.videoUrl,
+    isAI: patch.isAI ?? article.isAI,
   };
 }

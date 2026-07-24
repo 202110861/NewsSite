@@ -137,6 +137,7 @@ export default function ArticleDetailPage() {
   const [editTitle, setEditTitle] = useState("");
   const [editSubtitle, setEditSubtitle] = useState("");
   const [editSectionId, setEditSectionId] = useState<SectionId>("politics");
+  const [editIsAI, setEditIsAI] = useState(false);
   const [editBlocks, setEditBlocks] = useState<EditableBlock[]>([]);
   const [editLoading, setEditLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -290,6 +291,7 @@ export default function ArticleDetailPage() {
         adminArticle.excerpt ?? article.subtitle ?? article.excerpt ?? "",
       );
       setEditSectionId(adminArticle.sectionId as SectionId);
+      setEditIsAI(Boolean(adminArticle.isAI));
       setEditBlocks(
         withBlockKeys(
           adminArticle.blocks.length > 0
@@ -303,6 +305,7 @@ export default function ArticleDetailPage() {
       setEditTitle(article.title);
       setEditSubtitle(article.subtitle ?? article.excerpt ?? "");
       setEditSectionId(article.section);
+      setEditIsAI(Boolean(article.isAI));
       setIsEditing(true);
       if (err instanceof ApiError && err.status !== 404) {
         setEditError(err.message);
@@ -332,6 +335,7 @@ export default function ArticleDetailPage() {
       await updateAdminArticle(article.id, {
         title: editTitle.trim(),
         sectionId: editSectionId,
+        isAI: editIsAI,
         excerpt: subtitle,
         blocks,
       });
@@ -340,6 +344,7 @@ export default function ArticleDetailPage() {
         title: editTitle.trim(),
         sectionId: editSectionId,
         subtitle,
+        isAI: editIsAI,
       });
 
       setArticle(updated);
@@ -377,6 +382,14 @@ export default function ArticleDetailPage() {
   const popularNews = [...others]
     .sort((a, b) => (b.viewCount ?? 0) - (a.viewCount ?? 0))
     .slice(0, 5);
+  const subtitleText = article.subtitle ?? article.excerpt;
+  const body = article.body ?? [];
+  const firstBlock = body[0];
+  const firstIsImage =
+    firstBlock != null &&
+    typeof firstBlock !== "string" &&
+    firstBlock.type === "image";
+
   return (
     <>
       <SeoHead
@@ -525,17 +538,31 @@ export default function ArticleDetailPage() {
                 onChange={setEditBlocks}
                 subtitle={editSubtitle}
                 onSubtitleChange={setEditSubtitle}
+                isAI={editIsAI}
+                onIsAIChange={setEditIsAI}
               />
             ) : (
               <div className="flex flex-1 flex-col gap-4">
-                {(article.subtitle ?? article.excerpt) && (
-                  <p className="text-lg font-bold">
-                    {article.subtitle ?? article.excerpt}
-                  </p>
-                )}
-                {article.body && article.body.length > 0 ? (
+                {body.length > 0 ? (
                   <>
-                    {article.body.map((block, i) => renderBodyBlock(block, i))}
+                    {firstIsImage ? (
+                      <>
+                        {renderBodyBlock(firstBlock, 0)}
+                        {subtitleText && (
+                          <p className="text-lg font-bold">{subtitleText}</p>
+                        )}
+                        {body
+                          .slice(1)
+                          .map((block, i) => renderBodyBlock(block, i + 1))}
+                      </>
+                    ) : (
+                      <>
+                        {subtitleText && (
+                          <p className="text-lg font-bold">{subtitleText}</p>
+                        )}
+                        {body.map((block, i) => renderBodyBlock(block, i))}
+                      </>
+                    )}
                     {article.isAI && (
                       <p className="text-sm text-ink-500">
                         이 기사는 AI가 작성하였습니다.
@@ -543,10 +570,15 @@ export default function ArticleDetailPage() {
                     )}
                   </>
                 ) : (
-                  renderBodyBlock(
-                    article.excerpt ?? "본문 내용이 준비 중입니다.",
-                    0,
-                  )
+                  <>
+                    {subtitleText && (
+                      <p className="text-lg font-bold">{subtitleText}</p>
+                    )}
+                    {renderBodyBlock(
+                      article.excerpt ?? "본문 내용이 준비 중입니다.",
+                      0,
+                    )}
+                  </>
                 )}
               </div>
             )}
@@ -695,7 +727,7 @@ export default function ArticleDetailPage() {
               publisher={publisherNews}
               latest={latestNews}
               popular={popularNews}
-              className="mt-2"
+              className={firstIsImage ? undefined : "mt-2"}
             />
           )}
         </div>

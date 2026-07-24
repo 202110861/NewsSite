@@ -147,15 +147,12 @@ export default function MyPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
-      <h1 className="text-2xl font-bold text-ink-900">마이페이지</h1>
+      <h1 className="text-2xl font-bold text-ink-900 flex justify-center pb-3">
+        마이페이지
+      </h1>
       <div className="mt-2 flex flex-col bg-white rounded-xl border border-ink-900/10 p-5">
-        <p className="text-sm text-ink-600">
-          {user?.username}님이 좋아요한 기사와 작성한 댓글입니다.
-        </p>
-
         {error && <p className="mt-1 text-sm text-flash-600">{error}</p>}
-
-        <section className="mt-5">
+        <section>
           <h2 className="text-lg font-bold text-ink-900">후원 구독</h2>
           {!subscription ? (
             <p className="mt-3 text-sm text-ink-500">
@@ -175,7 +172,9 @@ export default function MyPage() {
                 </p>
                 <p className="text-lg font-bold text-ink-900">
                   {subscription.plan.amount.toLocaleString("ko-KR")}
-                  <span className="text-sm font-normal text-ink-500">원/월</span>
+                  <span className="text-sm font-normal text-ink-500">
+                    원/월
+                  </span>
                 </p>
               </div>
               <dl className="mt-4 space-y-2.5 text-sm">
