@@ -137,7 +137,7 @@ export default function SectionPage() {
           <span>›</span>
           <span>{meta.label}</span>
         </nav>
-        <div className="grid min-w-0 xl:grid-cols-[minmax(0,1fr)_16rem] xl:gap-x-6">
+        <div className="grid min-w-0 xl:grid-cols-[minmax(0,1fr)_minmax(0,min(16rem,28%))] xl:gap-x-6">
           <div className="flex items-baseline justify-between border-b-2 border-ink-900 pb-3 xl:col-start-1">
             <h1 className="font-display text-2xl font-black tracking-tight text-ink-900 sm:text-3xl">
               {meta.label}
@@ -179,9 +179,9 @@ export default function SectionPage() {
                         <h2 className="line-clamp-2 text-sm font-bold leading-snug text-ink-900 group-hover:text-flash-700 sm:text-base">
                           {a.title}
                         </h2>
-                        {a.excerpt && (
+                        {a.subtitle && (
                           <p className="line-clamp-2 text-xs text-ink-500">
-                            {a.excerpt}
+                            {a.subtitle}
                           </p>
                         )}
                         <time
