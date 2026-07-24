@@ -53,7 +53,7 @@ function formatDateOnly(iso: string) {
 }
 
 export default function MyPage() {
-  const { user, logout } = useAuth();
+  const { logout } = useAuth();
   const navigate = useNavigate();
   const [likes, setLikes] = useState<MyLikeItem[]>([]);
   const [comments, setComments] = useState<MyCommentItem[]>([]);
