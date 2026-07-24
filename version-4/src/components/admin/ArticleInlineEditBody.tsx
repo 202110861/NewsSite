@@ -19,6 +19,8 @@ interface Props {
   onChange: (blocks: EditableBlock[]) => void;
   subtitle?: string;
   onSubtitleChange?: (subtitle: string) => void;
+  isAI?: boolean;
+  onIsAIChange?: (isAI: boolean) => void;
 }
 
 function findAdjacentFigure(
@@ -99,6 +101,8 @@ export default function ArticleInlineEditBody({
   onChange,
   subtitle = "",
   onSubtitleChange,
+  isAI = false,
+  onIsAIChange,
 }: Props) {
   const editorRef = useRef<HTMLDivElement>(null);
   const skipRender = useRef(false);
@@ -125,7 +129,8 @@ export default function ArticleInlineEditBody({
     }
 
     document.addEventListener("selectionchange", trackSelection);
-    return () => document.removeEventListener("selectionchange", trackSelection);
+    return () =>
+      document.removeEventListener("selectionchange", trackSelection);
   }, []);
 
   function serialize() {
@@ -215,7 +220,9 @@ export default function ArticleInlineEditBody({
     const range = selection.getRangeAt(0);
 
     if (!range.collapsed) {
-      const selectedFigures = editor.querySelectorAll("figure[data-block-type]");
+      const selectedFigures = editor.querySelectorAll(
+        "figure[data-block-type]",
+      );
       for (const figure of Array.from(selectedFigures)) {
         if (selection.containsNode(figure, true)) {
           e.preventDefault();
@@ -237,7 +244,18 @@ export default function ArticleInlineEditBody({
   }
 
   return (
-    <div className="mt-7 space-y-4">
+    <div className="mt-2 space-y-4">
+      {onIsAIChange && (
+        <label className="flex cursor-pointer items-center gap-2.5">
+          <input
+            type="checkbox"
+            checked={isAI}
+            onChange={(e) => onIsAIChange(e.target.checked)}
+            className="size-4 rounded border-ink-900/30 text-flash-600 focus:ring-flash-600"
+          />
+          <span className="text-sm font-semibold text-ink-700">AI 생성물</span>
+        </label>
+      )}
       {onSubtitleChange && (
         <input
           type="text"
@@ -247,6 +265,7 @@ export default function ArticleInlineEditBody({
           className="w-full border-0 bg-transparent p-0 text-lg font-bold text-ink-900 outline-none placeholder:text-ink-400 focus:ring-2 focus:ring-flash-600/20"
         />
       )}
+
       <div
         ref={editorRef}
         contentEditable

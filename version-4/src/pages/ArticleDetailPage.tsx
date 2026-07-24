@@ -137,6 +137,7 @@ export default function ArticleDetailPage() {
   const [editTitle, setEditTitle] = useState("");
   const [editSubtitle, setEditSubtitle] = useState("");
   const [editSectionId, setEditSectionId] = useState<SectionId>("politics");
+  const [editIsAI, setEditIsAI] = useState(false);
   const [editBlocks, setEditBlocks] = useState<EditableBlock[]>([]);
   const [editLoading, setEditLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -290,6 +291,7 @@ export default function ArticleDetailPage() {
         adminArticle.excerpt ?? article.subtitle ?? article.excerpt ?? "",
       );
       setEditSectionId(adminArticle.sectionId as SectionId);
+      setEditIsAI(Boolean(adminArticle.isAI));
       setEditBlocks(
         withBlockKeys(
           adminArticle.blocks.length > 0
@@ -303,6 +305,7 @@ export default function ArticleDetailPage() {
       setEditTitle(article.title);
       setEditSubtitle(article.subtitle ?? article.excerpt ?? "");
       setEditSectionId(article.section);
+      setEditIsAI(Boolean(article.isAI));
       setIsEditing(true);
       if (err instanceof ApiError && err.status !== 404) {
         setEditError(err.message);
@@ -332,6 +335,7 @@ export default function ArticleDetailPage() {
       await updateAdminArticle(article.id, {
         title: editTitle.trim(),
         sectionId: editSectionId,
+        isAI: editIsAI,
         excerpt: subtitle,
         blocks,
       });
@@ -340,6 +344,7 @@ export default function ArticleDetailPage() {
         title: editTitle.trim(),
         sectionId: editSectionId,
         subtitle,
+        isAI: editIsAI,
       });
 
       setArticle(updated);
@@ -525,6 +530,8 @@ export default function ArticleDetailPage() {
                 onChange={setEditBlocks}
                 subtitle={editSubtitle}
                 onSubtitleChange={setEditSubtitle}
+                isAI={editIsAI}
+                onIsAIChange={setEditIsAI}
               />
             ) : (
               <div className="flex flex-1 flex-col gap-4">
@@ -543,10 +550,15 @@ export default function ArticleDetailPage() {
                     )}
                   </>
                 ) : (
-                  renderBodyBlock(
+                  <>
+                    {subtitleText && (
+                      <p className="text-lg font-bold">{subtitleText}</p>
+                    )}
+                    {renderBodyBlock(
                     article.excerpt ?? "본문 내용이 준비 중입니다.",
                     0,
-                  )
+                    )}
+                  </>
                 )}
               </div>
             )}
