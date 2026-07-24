@@ -3,7 +3,8 @@ import { Link } from "react-router-dom";
 
 const VIEW_MODE_KEY = "newsin-view-mode";
 const MOBILE_VIEWPORT = "width=device-width, initial-scale=1.0";
-const DESKTOP_VIEWPORT = "width=1280";
+/** PC 레이아웃 기준 너비 — Tailwind xl(1280) 이상과 맞춤 */
+const DESKTOP_LAYOUT_WIDTH = 1280;
 
 type ViewMode = "mobile" | "desktop";
 
@@ -17,24 +18,51 @@ function readStoredViewMode(): ViewMode {
   }
 }
 
-function applyViewport(mode: ViewMode) {
-  const meta = document.querySelector('meta[name="viewport"]');
-  if (!meta) return;
-  meta.setAttribute(
-    "content",
-    mode === "desktop" ? DESKTOP_VIEWPORT : MOBILE_VIEWPORT,
+function measureDeviceWidth() {
+  return Math.min(
+    window.screen.width,
+    document.documentElement.clientWidth || window.innerWidth,
   );
 }
 
+/**
+ * 모바일에서 PC버전: CSS viewport를 1280으로 두고
+ * initial-scale로 기기 화면에 맞게 축소해 데스크탑 레이아웃을 그대로 보여준다.
+ */
+function applyViewport(mode: ViewMode, deviceWidth: number) {
+  document.querySelector('meta[name="viewport"]')?.remove();
+
+  const meta = document.createElement("meta");
+  meta.name = "viewport";
+
+  if (mode === "desktop") {
+    const scale = Math.min(1, deviceWidth / DESKTOP_LAYOUT_WIDTH);
+    meta.content = [
+      `width=${DESKTOP_LAYOUT_WIDTH}`,
+      `initial-scale=${scale}`,
+      `minimum-scale=${scale}`,
+      "maximum-scale=5",
+      "user-scalable=yes",
+    ].join(", ");
+  } else {
+    meta.content = MOBILE_VIEWPORT;
+  }
+
+  document.head.appendChild(meta);
+  window.dispatchEvent(new Event("resize"));
+}
+
 function isCompactDevice() {
-  return window.screen.width < 1024;
+  // DevTools 기기 모드는 screen.width를 모니터 크기로 두는 경우가 많아
+  // 실제 레이아웃 너비(innerWidth)로 판별한다.
+  return window.innerWidth < 1024;
 }
 
 export default function Footer() {
   return (
     <>
       <footer className="border-t border-ink-900/10 bg-ink-900 text-paper-200">
-        <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
+        <div className="mx-auto max-w-6xl px-4 py-10">
           <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <div className="">
@@ -111,24 +139,48 @@ export default function Footer() {
 function ViewModeToggle() {
   const [mode, setMode] = useState<ViewMode>("mobile");
   const [showToggle, setShowToggle] = useState(false);
+  const [deviceWidth, setDeviceWidth] = useState(DESKTOP_LAYOUT_WIDTH);
 
   useLayoutEffect(() => {
     const stored = readStoredViewMode();
+    // 이미 PC모드면 innerWidth가 1280일 수 있어 screen 기준 사용
+    const width =
+      stored === "mobile" ? measureDeviceWidth() : window.screen.width;
+    setDeviceWidth(width);
     setMode(stored);
-    applyViewport(stored);
+    applyViewport(stored, width);
     setShowToggle(stored === "desktop" || isCompactDevice());
   }, []);
 
+  useEffect(() => {
+    function syncVisibility() {
+      setShowToggle(mode === "desktop" || isCompactDevice());
+    }
+
+    window.addEventListener("resize", syncVisibility);
+    return () => window.removeEventListener("resize", syncVisibility);
+  }, [mode]);
+
   function toggle() {
     const next: ViewMode = mode === "desktop" ? "mobile" : "desktop";
+    const width =
+      next === "desktop" && mode === "mobile"
+        ? measureDeviceWidth()
+        : deviceWidth;
+
+    if (next === "desktop" && mode === "mobile") {
+      setDeviceWidth(width);
+    }
+
     setMode(next);
-    applyViewport(next);
+    applyViewport(next, width);
     try {
       localStorage.setItem(VIEW_MODE_KEY, next);
     } catch {
       /* ignore */
     }
     setShowToggle(next === "desktop" || isCompactDevice());
+    window.scrollTo(0, 0);
   }
 
   if (!showToggle) return null;

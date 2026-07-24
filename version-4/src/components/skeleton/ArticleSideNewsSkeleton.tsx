@@ -21,7 +21,7 @@ export default function ArticleSideNewsSkeleton({
 }) {
   return (
     <aside
-      className={`sticky top-24 hidden w-64 shrink-0 self-start xl:block ${className}`}
+      className={`sticky top-24 hidden min-w-0 w-[min(16rem,28%)] shrink self-start xl:block ${className}`}
       aria-hidden
     >
       <section>
