@@ -40,7 +40,7 @@ export default function Footer() {
               <div className="">
                 <img src="/logo(white).png" alt="logo" className="w-35 " />
               </div>
-              <p className="mt-3 flex max-w-2xl flex-wrap gap-1 text-sm leading-relaxed text-paper-200/70 [&>span]:shrink-0">
+              <p className="mt-3 flex max-w-full flex-wrap gap-1 text-sm leading-relaxed text-paper-200/70 [&>span]:shrink-0">
                 <span>
                   경제인뉴스 : 경기 김포시 통진읍 애기봉로 681번길 87-29 ㅣ
                 </span>
@@ -70,7 +70,7 @@ export default function Footer() {
                 </Link>
               </p>
               <br />
-              <p className="text-paper-200/70 [&>span]:shrink-0">
+              <p className="text-paper-200/70 [&>span]:shrink-0 flex justify-center">
                 Copyright © 2026 경제인뉴스. All rights reserved.
               </p>
             </div>

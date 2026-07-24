@@ -138,13 +138,16 @@ export function blocksToArticleBody(
 export function mergeArticleWithBlocks(
   article: Article,
   blocks: BodyBlockInput[],
-  patch: { title: string; sectionId: string },
+  patch: { title: string; sectionId: string; subtitle?: string },
 ): Article {
   const cover = deriveCoverFromBlocks(blocks);
+  const subtitle = patch.subtitle?.trim() || undefined;
 
   return {
     ...article,
     title: patch.title,
+    subtitle,
+    excerpt: subtitle,
     section: patch.sectionId as Article["section"],
     body: blocksToArticleBody(blocks),
     image: cover.image,

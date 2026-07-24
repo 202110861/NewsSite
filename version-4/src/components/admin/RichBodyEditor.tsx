@@ -16,9 +16,16 @@ import {
 interface Props {
   value: BodyBlockInput[];
   onChange: (blocks: BodyBlockInput[]) => void;
+  subtitle?: string;
+  onSubtitleChange?: (subtitle: string) => void;
 }
 
-export default function RichBodyEditor({ value, onChange }: Props) {
+export default function RichBodyEditor({
+  value,
+  onChange,
+  subtitle = "",
+  onSubtitleChange,
+}: Props) {
   const editorRef = useRef<HTMLDivElement>(null);
   const skipRender = useRef(false);
   const lastSelectionRef = useRef<Range | null>(null);
@@ -180,6 +187,16 @@ export default function RichBodyEditor({ value, onChange }: Props) {
 
   return (
     <div className="space-y-2">
+      {onSubtitleChange && (
+        <input
+          type="text"
+          value={subtitle}
+          onChange={(e) => onSubtitleChange(e.target.value)}
+          placeholder="부제를 입력하세요 (선택)"
+          className="w-full rounded-lg border border-ink-900/15 px-3 py-2.5 text-sm outline-none focus:border-flash-600"
+        />
+      )}
+
       <div className="flex flex-wrap gap-2">
         <button
           type="button"

@@ -19,6 +19,7 @@ export default function AdminArticleFormPage() {
   const navigate = useNavigate();
 
   const [title, setTitle] = useState("");
+  const [subtitle, setSubtitle] = useState("");
   const [sectionId, setSectionId] = useState<SectionId>(
     sections[0]?.id ?? "politics",
   );
@@ -39,6 +40,7 @@ export default function AdminArticleFormPage() {
       .then((article) => {
         if (cancelled) return;
         setTitle(article.title);
+        setSubtitle(article.excerpt ?? "");
         setSectionId(article.sectionId as SectionId);
         setIsAI(Boolean(article.isAI));
         setBlocks(
@@ -79,6 +81,7 @@ export default function AdminArticleFormPage() {
         title: title.trim(),
         sectionId,
         isAI,
+        excerpt: subtitle.trim(),
         blocks: normalizedBlocks(),
       };
 
@@ -123,6 +126,7 @@ export default function AdminArticleFormPage() {
         title: title.trim(),
         sectionId,
         isAI,
+        excerpt: subtitle.trim(),
         blocks: normalizedBlocks(),
       });
       await approveAdminArticle(id);
@@ -203,7 +207,12 @@ export default function AdminArticleFormPage() {
           <label className="mb-2 block text-sm font-semibold text-ink-700">
             본문
           </label>
-          <RichBodyEditor value={blocks} onChange={setBlocks} />
+          <RichBodyEditor
+            value={blocks}
+            onChange={setBlocks}
+            subtitle={subtitle}
+            onSubtitleChange={setSubtitle}
+          />
         </div>
 
         {error && <p className="text-sm text-flash-600">{error}</p>}

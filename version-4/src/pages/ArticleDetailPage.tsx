@@ -135,6 +135,7 @@ export default function ArticleDetailPage() {
   const [notFound, setNotFound] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState("");
+  const [editSubtitle, setEditSubtitle] = useState("");
   const [editSectionId, setEditSectionId] = useState<SectionId>("politics");
   const [editBlocks, setEditBlocks] = useState<EditableBlock[]>([]);
   const [editLoading, setEditLoading] = useState(false);
@@ -285,6 +286,9 @@ export default function ArticleDetailPage() {
     try {
       const adminArticle = await fetchAdminArticle(article.id);
       setEditTitle(adminArticle.title);
+      setEditSubtitle(
+        adminArticle.excerpt ?? article.subtitle ?? article.excerpt ?? "",
+      );
       setEditSectionId(adminArticle.sectionId as SectionId);
       setEditBlocks(
         withBlockKeys(
@@ -297,6 +301,7 @@ export default function ArticleDetailPage() {
     } catch (err) {
       setEditBlocks(withBlockKeys(articleBlocksToBodyInput(article.body)));
       setEditTitle(article.title);
+      setEditSubtitle(article.subtitle ?? article.excerpt ?? "");
       setEditSectionId(article.section);
       setIsEditing(true);
       if (err instanceof ApiError && err.status !== 404) {
@@ -323,15 +328,18 @@ export default function ArticleDetailPage() {
 
     try {
       const blocks = stripBlockKeys(editBlocks);
+      const subtitle = editSubtitle.trim();
       await updateAdminArticle(article.id, {
         title: editTitle.trim(),
         sectionId: editSectionId,
+        excerpt: subtitle,
         blocks,
       });
 
       const updated = mergeArticleWithBlocks(article, blocks, {
         title: editTitle.trim(),
         sectionId: editSectionId,
+        subtitle,
       });
 
       setArticle(updated);
@@ -515,11 +523,15 @@ export default function ArticleDetailPage() {
               <ArticleInlineEditBody
                 blocks={editBlocks}
                 onChange={setEditBlocks}
+                subtitle={editSubtitle}
+                onSubtitleChange={setEditSubtitle}
               />
             ) : (
               <div className="flex flex-1 flex-col gap-4">
-                {article.subtitle && (
-                  <p className="text-lg font-bold">{article.subtitle}</p>
+                {(article.subtitle ?? article.excerpt) && (
+                  <p className="text-lg font-bold">
+                    {article.subtitle ?? article.excerpt}
+                  </p>
                 )}
                 {article.body && article.body.length > 0 ? (
                   <>
@@ -690,7 +702,7 @@ export default function ArticleDetailPage() {
       </div>
 
       {!isEditing && related.length > 0 && (
-        <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
+        <div className="mx-auto w-full max-w-6xl mb-5">
           <NewsCarousel
             title={`${meta?.label ?? ""} 관련기사`}
             articles={related}

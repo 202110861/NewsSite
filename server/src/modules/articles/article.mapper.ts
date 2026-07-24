@@ -40,6 +40,7 @@ export type FrontendBodyBlock =
 export interface FrontendArticle {
   id: string;
   title: string;
+  subtitle?: string;
   section: string;
   image?: string;
   isVideo?: boolean;
@@ -136,6 +137,7 @@ export function toFrontendArticle(article: ArticleRow): FrontendArticle {
   return {
     id: article.id,
     title: article.title,
+    subtitle: article.excerpt ?? undefined,
     section: article.sectionId,
     image: cover.image,
     isVideo: cover.isVideo,

@@ -17,6 +17,8 @@ import {
 interface Props {
   blocks: EditableBlock[];
   onChange: (blocks: EditableBlock[]) => void;
+  subtitle?: string;
+  onSubtitleChange?: (subtitle: string) => void;
 }
 
 function findAdjacentFigure(
@@ -92,7 +94,12 @@ function findAdjacentFigure(
   return null;
 }
 
-export default function ArticleInlineEditBody({ blocks, onChange }: Props) {
+export default function ArticleInlineEditBody({
+  blocks,
+  onChange,
+  subtitle = "",
+  onSubtitleChange,
+}: Props) {
   const editorRef = useRef<HTMLDivElement>(null);
   const skipRender = useRef(false);
   const lastSelectionRef = useRef<Range | null>(null);
@@ -230,20 +237,31 @@ export default function ArticleInlineEditBody({ blocks, onChange }: Props) {
   }
 
   return (
-    <div
-      ref={editorRef}
-      contentEditable
-      suppressContentEditableWarning
-      onInput={serialize}
-      onBlur={serialize}
-      onPaste={handlePaste}
-      onKeyDown={handleKeyDown}
-      onDragStart={handleDragStart}
-      onDragOver={handleDragOver}
-      onDrop={handleDrop}
-      onDragEnd={handleDragEnd}
-      className="mt-7 min-h-[200px] w-full text-base leading-[1.85] text-ink-800 outline-none focus:ring-2 focus:ring-flash-600/20 [&_figure]:my-4 [&_figure]:cursor-grab [&_figure]:active:cursor-grabbing [&_p]:min-h-[1.5em] [&_p]:whitespace-pre-line"
-      data-placeholder="본문을 입력하세요. 이미지는 붙여넣기(Ctrl+V)로 추가할 수 있습니다."
-    />
+    <div className="mt-7 space-y-4">
+      {onSubtitleChange && (
+        <input
+          type="text"
+          value={subtitle}
+          onChange={(e) => onSubtitleChange(e.target.value)}
+          placeholder="부제를 입력하세요 (선택)"
+          className="w-full border-0 bg-transparent p-0 text-lg font-bold text-ink-900 outline-none placeholder:text-ink-400 focus:ring-2 focus:ring-flash-600/20"
+        />
+      )}
+      <div
+        ref={editorRef}
+        contentEditable
+        suppressContentEditableWarning
+        onInput={serialize}
+        onBlur={serialize}
+        onPaste={handlePaste}
+        onKeyDown={handleKeyDown}
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
+        onDragEnd={handleDragEnd}
+        className="min-h-[200px] w-full text-base leading-[1.85] text-ink-800 outline-none focus:ring-2 focus:ring-flash-600/20 [&_figure]:my-4 [&_figure]:cursor-grab [&_figure]:active:cursor-grabbing [&_p]:min-h-[1.5em] [&_p]:whitespace-pre-line"
+        data-placeholder="본문을 입력하세요. 이미지는 붙여넣기(Ctrl+V)로 추가할 수 있습니다."
+      />
+    </div>
   );
 }
