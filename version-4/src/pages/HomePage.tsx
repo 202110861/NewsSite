@@ -44,7 +44,6 @@ export default function HomePage() {
     async function load() {
       try {
         const [
-          recent,
           video,
           politics,
           society,
@@ -54,7 +53,6 @@ export default function HomePage() {
           sidePool,
           ...gridResults
         ] = await Promise.all([
-          fetchArticles({ limit: 5 }),
           fetchArticles({ sectionId: "video", limit: 5 }),
           fetchArticles({ sectionId: "politics", limit: 6 }),
           fetchArticles({ sectionId: "society", limit: 5 }),
@@ -69,7 +67,21 @@ export default function HomePage() {
 
         if (cancelled) return;
 
-        setHeroArticles(recent);
+        const gridData: Record<string, Article[]> = {};
+        GRID_SECTIONS.forEach((sectionId, index) => {
+          gridData[sectionId] = gridResults[index] ?? [];
+        });
+
+        // 정치·경제·사회·문화·연예/스포츠 각 섹션 최신 1건
+        setHeroArticles(
+          [
+            politics[0],
+            gridData.economy?.[0],
+            society[0],
+            culture[0],
+            entertainment[0],
+          ].filter((article): article is Article => Boolean(article)),
+        );
         setVideoArticles(video);
         setPoliticsArticles(politics);
         setSocietyArticles(society);
@@ -82,11 +94,6 @@ export default function HomePage() {
             .sort((a, b) => (b.viewCount ?? 0) - (a.viewCount ?? 0))
             .slice(0, 5),
         );
-
-        const gridData: Record<string, Article[]> = {};
-        GRID_SECTIONS.forEach((sectionId, index) => {
-          gridData[sectionId] = gridResults[index] ?? [];
-        });
         setAllSectionArticles(gridData);
       } finally {
         if (!cancelled) setLoading(false);
