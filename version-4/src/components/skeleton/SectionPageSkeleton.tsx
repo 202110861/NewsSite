@@ -20,7 +20,7 @@ export default function SectionPageSkeleton({
         <Skeleton className="h-3 w-14" />
       </nav>
 
-      <div className="grid min-w-0 xl:grid-cols-[minmax(0,1fr)_16rem] xl:gap-x-6">
+      <div className="grid min-w-0 xl:grid-cols-[minmax(0,1fr)_minmax(0,min(16rem,28%))] xl:gap-x-6">
         <div className="flex items-baseline justify-between border-b-2 border-ink-900 pb-3 xl:col-start-1">
           {label ? (
             <h1 className="font-display text-2xl font-black tracking-tight text-ink-900 sm:text-3xl">
