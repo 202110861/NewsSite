@@ -156,7 +156,7 @@ export default function HomePage() {
                   publisher={publisherNews}
                   latest={latestNews}
                   popular={popularNews}
-                  className="mt-7"
+                  className="mt-7 basis-[min(16rem,28%)]"
                 />
               </div>
 

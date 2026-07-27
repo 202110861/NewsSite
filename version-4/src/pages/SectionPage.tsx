@@ -155,7 +155,7 @@ export default function SectionPage() {
               </div>
             ) : (
               <>
-                <div className="grid gap-x-5 gap-y-7 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-x-2 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
                   {articles.map((a) => (
                     <Link key={a.id} to={`/article/${a.id}`} className="group">
                       <div className="relative overflow-hidden rounded-md bg-ink-100">
