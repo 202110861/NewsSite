@@ -90,7 +90,7 @@ export default function ArticleSideNews({
 }: ArticleSideNewsProps) {
   return (
     <aside
-      className={`sticky top-24 hidden min-w-0 w-[min(16rem,28%)] shrink self-start xl:block ${className ?? ""}`}
+      className={`sticky top-24 hidden min-w-0 w-full max-w-64 shrink self-start xl:block ${className ?? ""}`}
       aria-label="관련 뉴스"
     >
       <section>

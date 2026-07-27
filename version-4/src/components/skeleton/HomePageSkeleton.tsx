@@ -100,7 +100,7 @@ export default function HomePageSkeleton() {
                 <CarouselSkeleton />
               </div>
 
-              <ArticleSideNewsSkeleton className="mt-7" />
+              <ArticleSideNewsSkeleton className="mt-7 basis-[min(16rem,28%)]" />
             </div>
 
             <SectionGridSkeleton />

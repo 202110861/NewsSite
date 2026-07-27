@@ -287,9 +287,7 @@ export default function ArticleDetailPage() {
     try {
       const adminArticle = await fetchAdminArticle(article.id);
       setEditTitle(adminArticle.title);
-      setEditSubtitle(
-        adminArticle.excerpt ?? article.subtitle ?? article.excerpt ?? "",
-      );
+      setEditSubtitle(adminArticle.subtitle ?? article.subtitle ?? "");
       setEditSectionId(adminArticle.sectionId as SectionId);
       setEditIsAI(Boolean(adminArticle.isAI));
       setEditBlocks(
@@ -303,7 +301,7 @@ export default function ArticleDetailPage() {
     } catch (err) {
       setEditBlocks(withBlockKeys(articleBlocksToBodyInput(article.body)));
       setEditTitle(article.title);
-      setEditSubtitle(article.subtitle ?? article.excerpt ?? "");
+      setEditSubtitle(article.subtitle ?? "");
       setEditSectionId(article.section);
       setEditIsAI(Boolean(article.isAI));
       setIsEditing(true);
@@ -336,7 +334,7 @@ export default function ArticleDetailPage() {
         title: editTitle.trim(),
         sectionId: editSectionId,
         isAI: editIsAI,
-        excerpt: subtitle,
+        subtitle: subtitle,
         blocks,
       });
 
@@ -382,7 +380,7 @@ export default function ArticleDetailPage() {
   const popularNews = [...others]
     .sort((a, b) => (b.viewCount ?? 0) - (a.viewCount ?? 0))
     .slice(0, 5);
-  const subtitleText = article.subtitle ?? article.excerpt;
+  const subtitleText = article.subtitle;
   const body = article.body ?? [];
   const firstBlock = body[0];
   const firstIsImage =
@@ -727,7 +725,7 @@ export default function ArticleDetailPage() {
               publisher={publisherNews}
               latest={latestNews}
               popular={popularNews}
-              className={firstIsImage ? undefined : "mt-2"}
+              className={`basis-[min(16rem,28%)]${firstIsImage ? "" : " mt-2"}`}
             />
           )}
         </div>

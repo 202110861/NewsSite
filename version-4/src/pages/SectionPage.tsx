@@ -63,10 +63,9 @@ export default function SectionPage() {
 
   useEffect(() => {
     if (loading || totalPages < 1 || page <= totalPages) return;
-    setSearchParams(
-      totalPages === 1 ? {} : { page: String(totalPages) },
-      { replace: true },
-    );
+    setSearchParams(totalPages === 1 ? {} : { page: String(totalPages) }, {
+      replace: true,
+    });
   }, [loading, page, totalPages, setSearchParams]);
 
   useEffect(() => {
@@ -139,7 +138,7 @@ export default function SectionPage() {
         </nav>
         <div className="grid min-w-0 xl:grid-cols-[minmax(0,1fr)_minmax(0,min(16rem,28%))] xl:gap-x-6">
           <div className="flex items-baseline justify-between border-b-2 border-ink-900 pb-3 xl:col-start-1">
-            <h1 className="font-display text-2xl font-black tracking-tight text-ink-900 sm:text-3xl">
+            <h1 className="font-display text-2xl font-black tracking-tight text-ink-900">
               {meta.label}
             </h1>
             <span className="text-sm text-ink-500">총 {total}건</span>

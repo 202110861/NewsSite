@@ -40,7 +40,7 @@ export default function AdminArticleFormPage() {
       .then((article) => {
         if (cancelled) return;
         setTitle(article.title);
-        setSubtitle(article.excerpt ?? "");
+        setSubtitle(article.subtitle ?? "");
         setSectionId(article.sectionId as SectionId);
         setIsAI(Boolean(article.isAI));
         setBlocks(
@@ -81,7 +81,7 @@ export default function AdminArticleFormPage() {
         title: title.trim(),
         sectionId,
         isAI,
-        excerpt: subtitle.trim(),
+        subtitle: subtitle.trim(),
         blocks: normalizedBlocks(),
       };
 
@@ -126,7 +126,7 @@ export default function AdminArticleFormPage() {
         title: title.trim(),
         sectionId,
         isAI,
-        excerpt: subtitle.trim(),
+        subtitle: subtitle.trim(),
         blocks: normalizedBlocks(),
       });
       await approveAdminArticle(id);
@@ -198,9 +198,7 @@ export default function AdminArticleFormPage() {
             onChange={(e) => setIsAI(e.target.checked)}
             className="size-4 rounded border-ink-900/30 text-flash-600 focus:ring-flash-600"
           />
-          <span className="text-sm font-semibold text-ink-700">
-            AI 생성물
-          </span>
+          <span className="text-sm font-semibold text-ink-700">AI 생성물</span>
         </label>
 
         <div>

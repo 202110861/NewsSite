@@ -51,7 +51,7 @@ export default function ArticleDetailSkeleton() {
           </div>
         </article>
 
-        <ArticleSideNewsSkeleton className="mt-2" />
+        <ArticleSideNewsSkeleton className="mt-2 basis-[min(16rem,28%)]" />
       </div>
     </div>
   );
