@@ -10,7 +10,6 @@ interface Props {
 }
 
 export default function NewsCarousel({ title, articles, moreHref }: Props) {
-
   if (articles.length === 0) return null;
 
   return (
@@ -30,9 +29,7 @@ export default function NewsCarousel({ title, articles, moreHref }: Props) {
       </div>
 
       <div className="relative min-w-0">
-        <div
-          className="flex snap-x snap-mandatory gap-1.5 overflow-x-auto scroll-smooth scrollbar-hide"
-        >
+        <div className="flex snap-x snap-mandatory gap-1.5 overflow-x-auto scroll-smooth scrollbar-hide">
           {articles.map((a) => (
             <Link
               key={a.id}
@@ -56,7 +53,7 @@ export default function NewsCarousel({ title, articles, moreHref }: Props) {
               </div>
               <div className="mt-1 flex flex-col gap-1.5">
                 <SectionTag section={a.section} />
-                <h3 className="line-clamp-2 text-sm font-bold leading-snug text-ink-900 group-hover:text-flash-700">
+                <h3 className="line-clamp-2 text-sm leading-snug text-ink-900 group-hover:text-flash-700">
                   {a.title}
                 </h3>
               </div>

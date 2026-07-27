@@ -11,7 +11,7 @@ interface ArticleSideNewsProps {
 
 function SectionTitle({ children }: { children: string }) {
   return (
-    <h2 className="border-t-2 border-b border-ink-900 py-2 font-display text-sm font-black tracking-tight text-ink-900">
+    <h2 className="border-t-2 border-b border-ink-900 py-2 font-display text-md tracking-tight text-ink-900">
       {children}
     </h2>
   );
@@ -59,7 +59,7 @@ function FeaturedList({ articles }: { articles: Article[] }) {
             />
           </div>
         )}
-        <p className="mt-2 line-clamp-2 text-sm font-bold leading-snug text-ink-900 group-hover:text-flash-700">
+        <p className="mt-2 line-clamp-2 text-sm leading-snug text-ink-900 group-hover:text-flash-700">
           {lead.title}
         </p>
       </Link>
