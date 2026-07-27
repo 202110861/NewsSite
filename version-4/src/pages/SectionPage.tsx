@@ -175,7 +175,7 @@ export default function SectionPage() {
                       </div>
                       <div className="mt-2.5 flex flex-col gap-1.5">
                         <SectionTag section={a.section} />
-                        <h2 className="line-clamp-2 text-sm font-bold leading-snug text-ink-900 group-hover:text-flash-700 sm:text-base">
+                        <h2 className="line-clamp-2 text-sm leading-snug text-ink-900 group-hover:text-flash-700 sm:text-base">
                           {a.title}
                         </h2>
                         {a.subtitle && (

@@ -1,3 +1,4 @@
+import type { Ref } from "react";
 import { Link } from "react-router-dom";
 import type { Article } from "../types/news";
 import { resolveMediaUrl } from "../utils/media";
@@ -7,11 +8,12 @@ interface ArticleSideNewsProps {
   latest: Article[];
   popular: Article[];
   className?: string;
+  ref?: Ref<HTMLElement>;
 }
 
 function SectionTitle({ children }: { children: string }) {
   return (
-    <h2 className="border-t-2 border-b border-ink-900 py-2 font-display text-sm font-black tracking-tight text-ink-900">
+    <h2 className="border-t-2 border-b border-ink-900 py-2 font-display text-md tracking-tight text-ink-900">
       {children}
     </h2>
   );
@@ -59,7 +61,7 @@ function FeaturedList({ articles }: { articles: Article[] }) {
             />
           </div>
         )}
-        <p className="mt-2 line-clamp-2 text-sm font-bold leading-snug text-ink-900 group-hover:text-flash-700">
+        <p className="mt-2 line-clamp-2 text-sm leading-snug text-ink-900 group-hover:text-flash-700">
           {lead.title}
         </p>
       </Link>
@@ -87,9 +89,11 @@ export default function ArticleSideNews({
   latest,
   popular,
   className,
+  ref,
 }: ArticleSideNewsProps) {
   return (
     <aside
+      ref={ref}
       className={`sticky top-24 hidden min-w-0 w-full max-w-64 shrink self-start xl:block ${className ?? ""}`}
       aria-label="관련 뉴스"
     >
