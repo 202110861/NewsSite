@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import HotIssueTicker from "../components/HotIssueTicker";
 import HeroHeadlines from "../components/HeroHeadlines";
 import NewsCarousel from "../components/NewsCarousel";
@@ -27,12 +27,16 @@ export default function HomePage() {
   const [entertainmentArticles, setEntertainmentArticles] = useState<Article[]>(
     [],
   );
+  const [cultureArticles, setCultureArticles] = useState<Article[]>([]);
   const [publisherNews, setPublisherNews] = useState<Article[]>([]);
   const [latestNews, setLatestNews] = useState<Article[]>([]);
   const [popularNews, setPopularNews] = useState<Article[]>([]);
   const [allSectionArticles, setAllSectionArticles] = useState<
     Record<string, Article[]>
   >({});
+  const [showCultureCarousel, setShowCultureCarousel] = useState(false);
+  const mainColumnRef = useRef<HTMLDivElement>(null);
+  const sideNewsRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -45,6 +49,7 @@ export default function HomePage() {
           politics,
           society,
           entertainment,
+          culture,
           publisher,
           sidePool,
           ...gridResults
@@ -54,6 +59,7 @@ export default function HomePage() {
           fetchArticles({ sectionId: "politics", limit: 6 }),
           fetchArticles({ sectionId: "society", limit: 5 }),
           fetchArticles({ sectionId: "entertainment", limit: 6 }),
+          fetchArticles({ sectionId: "culture", limit: 5 }),
           fetchArticles({ sectionId: "publisher", limit: 5 }),
           fetchArticles({ limit: 40 }),
           ...GRID_SECTIONS.map((sectionId) =>
@@ -68,6 +74,7 @@ export default function HomePage() {
         setPoliticsArticles(politics);
         setSocietyArticles(society);
         setEntertainmentArticles(entertainment);
+        setCultureArticles(culture);
         setPublisherNews(publisher);
         setLatestNews(sidePool.slice(0, 5));
         setPopularNews(
@@ -91,6 +98,32 @@ export default function HomePage() {
       cancelled = true;
     };
   }, []);
+
+  // 사이드가 메인 칼럼보다 길 때만 문화/전시 캐러셀로 빈 공간을 채움
+  useEffect(() => {
+    if (loading) return;
+
+    const mainEl = mainColumnRef.current;
+    const sideEl = sideNewsRef.current;
+    if (!mainEl || !sideEl) return;
+
+    const compare = () => {
+      if (getComputedStyle(sideEl).display === "none") {
+        setShowCultureCarousel(false);
+        return;
+      }
+      const mainBottom = mainEl.getBoundingClientRect().bottom;
+      const sideBottom = sideEl.getBoundingClientRect().bottom;
+      setShowCultureCarousel(sideBottom > mainBottom);
+    };
+
+    const observer = new ResizeObserver(compare);
+    observer.observe(mainEl);
+    observer.observe(sideEl);
+    compare();
+
+    return () => observer.disconnect();
+  }, [loading]);
 
   if (loading) {
     return (
@@ -123,36 +156,46 @@ export default function HomePage() {
             <div className="flex min-w-0 w-full max-w-full flex-col xl:w-[calc(100%-600px)]">
               <div className="mb-6 flex min-w-0 justify-center gap-1">
                 <div className="flex min-w-0 flex-1 flex-col">
-                  <HeroHeadlines articles={heroArticles} />
-                  <div className="md:hidden">
+                  <div ref={mainColumnRef} className="flex min-w-0 flex-col">
+                    <HeroHeadlines articles={heroArticles} />
+                    <div className="md:hidden">
+                      <NewsCarousel
+                        title="발행인칼럼"
+                        articles={publisherNews}
+                        moreHref="/section/publisher"
+                      />
+                    </div>
                     <NewsCarousel
-                      title="발행인칼럼"
-                      articles={publisherNews}
-                      moreHref="/section/publisher"
+                      title="정치"
+                      articles={politicsArticles}
+                      moreHref="/section/politics"
+                    />
+                    <NewsCarousel
+                      title="연예/스포츠"
+                      articles={entertainmentArticles}
+                      moreHref="/section/entertainment"
+                    />
+                    <NewsCarousel
+                      title="영상뉴스"
+                      articles={videoArticles}
+                      moreHref="/section/video"
+                    />
+                    <NewsCarousel
+                      title="사회"
+                      articles={societyArticles}
+                      moreHref="/section/society"
                     />
                   </div>
-                  <NewsCarousel
-                    title="정치"
-                    articles={politicsArticles}
-                    moreHref="/section/politics"
-                  />
-                  <NewsCarousel
-                    title="연예/스포츠"
-                    articles={entertainmentArticles}
-                    moreHref="/section/entertainment"
-                  />
-                  <NewsCarousel
-                    title="영상뉴스"
-                    articles={videoArticles}
-                    moreHref="/section/video"
-                  />
-                  <NewsCarousel
-                    title="사회"
-                    articles={societyArticles}
-                    moreHref="/section/society"
-                  />
+                  {showCultureCarousel && (
+                    <NewsCarousel
+                      title="문화/전시"
+                      articles={cultureArticles}
+                      moreHref="/section/culture"
+                    />
+                  )}
                 </div>
                 <ArticleSideNews
+                  ref={sideNewsRef}
                   publisher={publisherNews}
                   latest={latestNews}
                   popular={popularNews}

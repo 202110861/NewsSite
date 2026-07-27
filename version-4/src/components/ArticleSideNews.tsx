@@ -1,3 +1,4 @@
+import type { Ref } from "react";
 import { Link } from "react-router-dom";
 import type { Article } from "../types/news";
 import { resolveMediaUrl } from "../utils/media";
@@ -7,6 +8,7 @@ interface ArticleSideNewsProps {
   latest: Article[];
   popular: Article[];
   className?: string;
+  ref?: Ref<HTMLElement>;
 }
 
 function SectionTitle({ children }: { children: string }) {
@@ -87,9 +89,11 @@ export default function ArticleSideNews({
   latest,
   popular,
   className,
+  ref,
 }: ArticleSideNewsProps) {
   return (
     <aside
+      ref={ref}
       className={`sticky top-24 hidden min-w-0 w-full max-w-64 shrink self-start xl:block ${className ?? ""}`}
       aria-label="관련 뉴스"
     >
