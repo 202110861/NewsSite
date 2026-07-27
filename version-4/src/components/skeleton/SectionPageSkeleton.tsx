@@ -33,7 +33,7 @@ export default function SectionPageSkeleton({
         </div>
 
         <div className="min-w-0 pt-6 xl:col-start-1 xl:row-start-2">
-          <div className="grid gap-x-5 gap-y-7 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-x-2 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
             {Array.from({ length: 9 }).map((_, i) => (
               <div key={i}>
                 <Skeleton className="aspect-4/3 w-full rounded-md" />

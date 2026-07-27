@@ -60,6 +60,7 @@ export interface AdminArticle {
   sectionId: string;
   status: "PENDING_REVIEW" | "PUBLISHED" | "REJECTED" | "ARCHIVED";
   excerpt?: string | null;
+  subtitle?: string | null;
   reporter: string;
   isAI?: boolean;
   createdAt: string;
