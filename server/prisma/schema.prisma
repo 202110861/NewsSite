@@ -102,6 +102,7 @@ model Article {
   isVideo        Boolean            @default(false)
   isAI           Boolean            @default(false)
   excerpt        String?
+  subtitle       String?
   reporter       String             @default("발행인")
   viewCount      Int                @default(0)
   publishedAt    DateTime?

@@ -152,7 +152,6 @@ export function mergeArticleWithBlocks(
     ...article,
     title: patch.title,
     subtitle,
-    excerpt: subtitle,
     section: patch.sectionId as Article["section"],
     body: blocksToArticleBody(blocks),
     image: cover.image,
