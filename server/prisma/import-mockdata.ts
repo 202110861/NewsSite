@@ -7,7 +7,6 @@ import {
 import { articlesById } from "./mockdata.js";
 import {
   registerUploadImages,
-  seedAdminUser,
   seedSections,
 } from "./seed-shared.js";
 
@@ -109,7 +108,6 @@ function convertArticle(
 
 async function seedBase() {
   await seedSections(prisma);
-  await seedAdminUser(prisma);
 }
 
 async function main() {

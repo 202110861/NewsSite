@@ -37,7 +37,7 @@ export function isPaymentTester(user: {
   role: string
   username: string
 }): boolean {
-  // 사이트 관리자(lawform0511 등)와 분리된 결제 테스트 전용 계정
+  // 결제 테스트 전용 계정 (username `admin`)
   if (user.username.toLowerCase() === 'admin') return true
   const allowList = getPaymentTestUsernames()
   return allowList.includes(user.username)

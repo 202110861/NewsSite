@@ -30,19 +30,6 @@ export async function seedSections(prisma: PrismaClient) {
   }
 }
 
-export async function seedAdminUser(prisma: PrismaClient) {
-  const adminHash = await hashPassword("Songdo94!");
-  await prisma.user.upsert({
-    where: { username: "lawform0511" },
-    update: { passwordHash: adminHash, role: "ADMIN" },
-    create: {
-      username: "lawform0511",
-      passwordHash: adminHash,
-      role: "ADMIN",
-    },
-  });
-}
-
 /** 결제 테스트 전용 계정 (사이트 ADMIN과 별도, role=USER) */
 export async function seedPaymentTestUser(prisma: PrismaClient) {
   const hash = await hashPassword("12341234");

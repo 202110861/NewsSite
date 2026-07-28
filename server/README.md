@@ -53,10 +53,6 @@ npx prisma db push
 npx prisma generate
 ```
 
-## 기본 계정 (seed)
-
-- 관리자: `admin` / `admin1234`
-
 ## API 문서
 
 - `docs/API.md`
