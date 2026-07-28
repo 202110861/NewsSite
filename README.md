@@ -45,7 +45,7 @@
 
 ---
 
-## 4. 핵심 트러블슈팅 및 레슨 런 (Troubleshooting)
+## 4. 핵심 트러블슈팅 (Troubleshooting)
 
 ### 1) GitHub Actions 기반 자동 배포 및 네트워크 접근 제어 해결
 
@@ -109,9 +109,9 @@ server {
 
 - **원인 분석:** SPA(React) 클라이언트 라우팅 설정이 빠져 있어 생기는 현상. 메인(`/`)에서 링크로 이동할 때는 이미 로드된 `index.html` 위에서 React Router가 처리하므로 정상이지만, `/search` 등에서 새로고침하면 브라우저가 S3에 해당 경로 파일을 직접 요청함. S3에는 보통 `index.html`만 있고 `/search` 같은 파일은 없으며, 퍼블릭 액세스 차단이 켜져 있으면 “파일 없음”이 **403 Access Denied XML**로 보이는 경우가 많음.
 
-| 동작 | 결과 |
-| --- | --- |
-| 메인(`/`)에서 링크로 이동 | `index.html`이 이미 로드됨 → React Router가 처리 → 정상 |
+| 동작                                | 결과                                                                   |
+| ----------------------------------- | ---------------------------------------------------------------------- |
+| 메인(`/`)에서 링크로 이동           | `index.html`이 이미 로드됨 → React Router가 처리 → 정상                |
 | `/search`, `/login` 등에서 새로고침 | 브라우저가 S3에 `/search` 파일을 직접 요청 → 파일 없음 → Access Denied |
 
 - **해결 방법:** CloudFront 사용자 지정 에러 응답(Custom Error Pages)을 추가해 `403`/`404` 발생 시 `/index.html`을 `200 OK`로 반환하도록 설정. 이후 클라이언트 라우팅이 정상 동작함.
@@ -126,22 +126,22 @@ server {
 ```js
 // prerender-og.mjs
 for (const article of articles) {
-  const description = article.excerpt?.trim() || article.title
+  const description = article.excerpt?.trim() || article.title;
 
   writeOgPage(
     outDir,
-    ['article', article.id],
+    ["article", article.id],
     injectMeta(baseHtml, {
       title: `${article.title} - ${SITE_NAME}`,
       // ...
     }),
-  )
+  );
 }
 ```
 
-| 동작 | 동작 방식 | 결과 |
-| --- | --- | --- |
-| 목록에서 기사 클릭 | React Router가 `/article/:id` 처리 (클라이언트) | 정상 |
-| F5 새로고침 | 브라우저가 `https://newsin.kr/article/{id}`를 S3/CloudFront에 직접 요청 | 해당 경로 객체 없음 → Access Denied |
+| 동작               | 동작 방식                                                               | 결과                                |
+| ------------------ | ----------------------------------------------------------------------- | ----------------------------------- |
+| 목록에서 기사 클릭 | React Router가 `/article/:id` 처리 (클라이언트)                         | 정상                                |
+| F5 새로고침        | 브라우저가 `https://newsin.kr/article/{id}`를 S3/CloudFront에 직접 요청 | 해당 경로 객체 없음 → Access Denied |
 
 - **해결 방법:** 새 기사가 업로드·게시될 때마다 S3에 `article/{id}/index.html`(OG HTML)을 업로드하고 CloudFront 캐시를 갱신하는 동기화 함수를 구축. 기사 승인·수정 시 S3 업로드/캐시 무효화, 삭제 시 S3 객체 삭제 및 캐시 무효화를 호출해 관리자 게시/수정/삭제와 S3 페이지를 항상 동기화.
