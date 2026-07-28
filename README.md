@@ -37,7 +37,7 @@
    │     └─► CloudFront (WAF 적용) ──► S3 Bucket (Static Web Hosting)
    │
    └─► https://api.newsin.kr (Backend API)
-         └─► Nginx (Reverse Proxy & SSL) ──► EC2 (Express App :4000) ──► RDS (MySQL)
+         └─► Nginx (Reverse Proxy & SSL) ──► EC2 (Express App) ──► RDS (MySQL)
 ```
 
 - **프론트엔드/API 도메인 분리:** 정적 자원(S3/CloudFront)과 백엔드 API(Nginx/EC2)의 도메인을 격리하여 WAF 보안 규칙을 유지하면서도 무중단 파일 업로드 및 API 통신이 가능한 구조 설계
@@ -51,36 +51,34 @@
 
 ![GitHub Actions Configure SSH 실패](docs/images/github-actions-ssh-keyscan-fail.png)
 
-- **문제 현상:** CI/CD 파이프라인의 `Configure SSH` 단계에서 `ssh-keyscan`이 실패하며 EC2 배포가 중단됨. `ssh-keyscan` 실패는 GitHub Actions 러너에서 EC2의 22번 포트에 도달하지 못했다는 의미로, SSH 키 문제보다 네트워크/주소 문제일 가능성이 큼.
-- **원인 분석:** Secret(`EC2_HOST`, `EC2_USER`, `EC2_DEPLOY_PATH`)과 EC2 보안 그룹(Security Group) 인바운드 규칙을 점검한 결과, SSH(Port 22) 규칙이 특정 IP 하나만 허용하고 있어 GitHub Actions 서버의 접근이 차단되고 있었음.
+- **문제 현상:** CI/CD 파이프라인의 `Configure SSH` 단계에서 `ssh-keyscan`이 실패하며 EC2 배포가 중단됨. `ssh-keyscan` 실패는 GitHub Actions 러너에서 EC2의 SSH 포트에 도달하지 못했다는 의미로, SSH 키 문제보다 네트워크/주소 문제일 가능성이 큼.
+- **원인 분석:** 배포용 GitHub Secrets(호스트·접속 계정·배포 경로 등)와 EC2 보안 그룹(Security Group) 인바운드 규칙을 점검한 결과, SSH 규칙이 제한된 출처만 허용하고 있어 GitHub Actions 러너의 접근이 차단되고 있었음.
 
-![EC2 보안그룹 SSH 단일 IP 허용](docs/images/ec2-sg-ssh-single-ip.png)
-
-- **해결 방법:** 기존 SSH 규칙은 유지한 채, GitHub Actions 배포용 SSH(Port 22) 접근을 허용하는 인바운드 규칙을 추가로 등록하여 자동 배포 파이프라인을 정상화.
+- **해결 방법:** 기존 SSH 규칙은 유지한 채, CI/CD 배포용 SSH 접근을 허용하는 인바운드 규칙을 추가로 등록하여 자동 배포 파이프라인을 정상화.
 
 ### 2) API 도메인 분리 및 Nginx 리버스 프록시 구축 (WAF 충돌 해결)
 
 ![업로드 API 네트워크 200 응답](docs/images/network-uploads-200-status.png)
 
-- **문제 현상:** 관리자 에디터에서 이미지 URL·파일 버튼·붙여넣기로 이미지를 삽입해도 input에 반영되지 않음. 업로드 API 자체는 동작하는 것처럼 보였으나, 응답 `Content-Type`이 `application/json`이 아닌 `text/html`이고 `Server: AmazonS3`로 반환됨. 프론트와 API가 동일한 CloudFront + WAF를 경유해, 무료 WAF가 `POST /api/admin/uploads` 멀티파트 요청을 차단할 수 있는 구조였음.
+- **문제 현상:** 관리자 에디터에서 이미지 URL·파일 버튼·붙여넣기로 이미지를 삽입해도 input에 반영되지 않음. 업로드 API 자체는 동작하는 것처럼 보였으나, 응답 `Content-Type`이 `application/json`이 아닌 `text/html`이고 `Server: AmazonS3`로 반환됨. 프론트와 API가 동일한 CloudFront + WAF를 경유해, WAF가 관리자 미디어 업로드(멀티파트) 요청을 차단할 수 있는 구조였음.
 
 ![CloudFront+WAF 경유 시 API 차단 구조](docs/images/waf-api-block-architecture.png)
 
-- **원인 분석:** 처음에는 `RichBodyEditor`의 DOM 삽입·직렬화 흐름(`execCommand` → `serialize()` → 부모 `setBlocks`)과 `execCommand` 호출 시점의 커서/포커스 부재를 의심했으나, CloudFront 커스텀 403 응답을 제거하자 `/uploads`가 403으로 노출되며 **실제 원인은 CloudFront/WAF 경로의 업로드 차단**임을 확인.
-- **해결 방법:** API 전용 도메인 `api.newsin.kr`를 분리 개설하고, EC2에 Nginx·Certbot을 설치해 리버스 프록시와 SSL을 구성. `newsin.kr`는 프론트(WAF 유지), `api.newsin.kr`는 API 전용(WAF 없이 EC2 직접)으로 분리. 이후 EC2 보안 그룹에서 CloudFront가 4000번으로 직접 들어오던 TCP 4000 인바운드 규칙을 정리하고, 4000번은 EC2 내부에서 Nginx → Express 프록시에만 사용하도록 변경.
+- **원인 분석:** 처음에는 `RichBodyEditor`의 DOM 삽입·직렬화 흐름(`execCommand` → `serialize()` → 부모 `setBlocks`)과 `execCommand` 호출 시점의 커서/포커스 부재를 의심했으나, CloudFront 커스텀 403 응답을 제거하자 업로드 경로가 403으로 노출되며 **실제 원인은 CloudFront/WAF 경로의 업로드 차단**임을 확인.
+- **해결 방법:** API 전용 서브도메인을 분리 개설하고, EC2에 Nginx·Certbot을 설치해 리버스 프록시와 SSL을 구성. 프론트 도메인은 WAF를 유지하고, API 도메인은 EC2로 직접 연결되도록 분리. 이후 보안 그룹에서 CDN이 백엔드 앱 포트로 직접 들어오던 인바운드 규칙을 정리하고, 앱 포트는 EC2 내부에서 Nginx → Express 프록시에만 사용하도록 변경.
 
 ```nginx
-# /etc/nginx/sites-available/api.newsin.kr
+# /etc/nginx/sites-available/api.<domain>
 server {
     listen 80;
-    server_name api.newsin.kr;
+    server_name api.<domain>;
 
     location /.well-known/acme-challenge/ {
         root /var/www/html;
     }
 
     location / {
-        proxy_pass http://127.0.0.1:4000;
+        proxy_pass http://127.0.0.1:<APP_PORT>;
         proxy_http_version 1.1;
         proxy_set_header Host              $host;
         proxy_set_header X-Real-IP         $remote_addr;
@@ -92,14 +90,13 @@ server {
 }
 ```
 
-- **결과:** `newsin.kr` → 프론트만(WAF 유지 가능), `api.newsin.kr` → API만(WAF 없음, EC2 직접). Certbot으로 SSL 적용 후 업로드·API 통신 정상화.
+- **결과:** 프론트 도메인 → 정적 자원만(WAF 유지 가능), API 도메인 → 백엔드만(WAF 우회, EC2 직접). Certbot으로 SSL 적용 후 업로드·API 통신 정상화.
 
 ![API 도메인 분리 후 구조](docs/images/api-domain-split-architecture.png)
 
 - **수정해야 할 부분:** EC2 보안 그룹의 인바운드 규칙 편집
-  - 수정 전: CloudFront가 EC2 4000번 포트로 직접 들어와야 해서 TCP 4000 규칙이 있어야 했음
-    ![EC2 보안그룹 TCP 4000 규칙 (변경 전)](docs/images/ec2-sg-tcp-4000-before.png)
-  - 수정 후: `api.newsin.kr` 추가 후 4000번은 EC2 내부에서 Nginx가 Express로 넘길 때만 사용
+  - 수정 전: CDN이 EC2 백엔드 앱 포트로 직접 들어와야 해서 해당 포트 규칙이 필요했음
+  - 수정 후: API 도메인 분리 후 앱 포트는 EC2 내부에서 Nginx가 Express로 넘길 때만 사용
 
 ### 3) React SPA의 S3/CloudFront 정적 호스팅 라우팅 해결
 
@@ -139,9 +136,9 @@ for (const article of articles) {
 }
 ```
 
-| 동작               | 동작 방식                                                               | 결과                                |
-| ------------------ | ----------------------------------------------------------------------- | ----------------------------------- |
-| 목록에서 기사 클릭 | React Router가 `/article/:id` 처리 (클라이언트)                         | 정상                                |
-| F5 새로고침        | 브라우저가 `https://newsin.kr/article/{id}`를 S3/CloudFront에 직접 요청 | 해당 경로 객체 없음 → Access Denied |
+| 동작               | 동작 방식                                              | 결과                                |
+| ------------------ | ------------------------------------------------------ | ----------------------------------- |
+| 목록에서 기사 클릭 | React Router가 `/article/:id` 처리 (클라이언트)        | 정상                                |
+| F5 새로고침        | 브라우저가 `/article/{id}`를 S3/CloudFront에 직접 요청 | 해당 경로 객체 없음 → Access Denied |
 
 - **해결 방법:** 새 기사가 업로드·게시될 때마다 S3에 `article/{id}/index.html`(OG HTML)을 업로드하고 CloudFront 캐시를 갱신하는 동기화 함수를 구축. 기사 승인·수정 시 S3 업로드/캐시 무효화, 삭제 시 S3 객체 삭제 및 캐시 무효화를 호출해 관리자 게시/수정/삭제와 S3 페이지를 항상 동기화.
