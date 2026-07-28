@@ -97,7 +97,8 @@ function convertArticle(
     status: "PUBLISHED" as const,
     isVideo: flags.isVideo,
     isAI: article.isAI ?? false,
-    excerpt: article.excerpt ?? article.subtitle,
+    excerpt: article.excerpt ?? null,
+    subtitle: article.subtitle ?? null,
     reporter: article.reporter ?? "발행인",
     publishedAt: new Date(article.publishedAt),
     bodyBlocks: {
