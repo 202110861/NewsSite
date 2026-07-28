@@ -334,7 +334,7 @@ export default function ArticleDetailPage() {
         title: editTitle.trim(),
         sectionId: editSectionId,
         isAI: editIsAI,
-        subtitle: subtitle,
+        subtitle,
         blocks,
       });
 
