@@ -55,6 +55,38 @@ Authorization: Bearer {accessToken}
 
 `blocks`의 `IMAGE`/`VIDEO` 블록에 외부 `mediaUrl`(http/https)을 넣으면 서버가 파일을 다운로드해 `uploads/`에 저장하고 `filePath`로 변환합니다. YouTube URL은 그대로 `mediaUrl`로 저장됩니다.
 
+커버 이미지를 자동화에서 올릴 때는 **반드시** 아래 순서를 지키세요.
+
+1. `POST /api/automation/uploads` 로 파일 업로드 → `mediaUrl` 수신  
+2. 그 `mediaUrl`을 기사 `blocks`의 `IMAGE.mediaUrl`에 넣어  
+3. `POST /api/automation/articles` 로 기사 등록  
+
+파일 바이너리만 기사 등록에 넣고 URL이 없으면 이미지가 빠집니다.  
+운영에서는 `API_PUBLIC_URL`(외부에서 접근 가능한 API 오리진)을 설정해 응답 URL이 공개 절대 경로가 되게 하세요.
+
+### 커버 이미지 업로드
+
+```
+POST /api/automation/uploads
+X-API-Key: {AUTOMATION_API_KEY}
+Content-Type: multipart/form-data
+
+file: (cover.jpg 1장)
+```
+
+응답 예:
+
+```json
+{
+  "id": "...",
+  "filePath": "images/xxxx.jpg",
+  "url": "https://api.example.com/uploads/images/xxxx.jpg",
+  "mediaUrl": "https://api.example.com/uploads/images/xxxx.jpg",
+  "mimeType": "image/jpeg",
+  "originalName": "cover.jpg"
+}
+```
+
 ### 일반 기사 등록
 
 ```
@@ -65,12 +97,13 @@ Content-Type: application/json
 {
   "title": "자동 수집 기사",
   "sectionId": "politics",
-  "excerpt": "요약",
+  "subtitle": "부제",
+  "excerpt": "검색·SEO용 요약",
   "reporter": "발행인",
   "sourceUrl": "https://example.com/original",
   "blocks": [
+    { "type": "IMAGE", "mediaUrl": "https://api.example.com/uploads/images/xxxx.jpg", "caption": "커버" },
     { "type": "TEXT", "text": "본문 첫 문단" },
-    { "type": "IMAGE", "mediaUrl": "https://example.com/photo.jpg", "caption": "캡션" },
     { "type": "TEXT", "text": "본문 두 번째 문단" }
   ]
 }
