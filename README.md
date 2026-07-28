@@ -12,7 +12,7 @@
   - **실시간 동적 SEO 생성기:** 관리자의 기사 승인/수정/삭제 시 S3에 OG 메타데이터가 포함된 HTML 즉시 생성 및 CloudFront 캐시 무효화 자동화
   - **자체 커스텀 에디터(CMS):** 이미지/미디어 삽입, Rich Text 편집 및 백엔드 업로드 API 연동
   - **사용자 웹 서비스:** 카테고리별 뉴스 조회, 검색, 기사 상세 페이지 및 SNS 공유 기능
-- **서비스 URL:** `https://newsin.kr/`
+- **서비스 URL:** [https://newsin.kr/](https://newsin.kr/)
 
 ---
 
@@ -49,30 +49,99 @@
 
 ### 1) GitHub Actions 기반 자동 배포 및 네트워크 접근 제어 해결
 
-- **문제 현상:** CI/CD 파이프라인 연동 중 `ssh-keyscan` 실패로 인해 EC2 배포 작업 중단 발생.
-- **원인 분석:** SSH 키 문제나 CI/CD 스크립트 오작동이 아닌, AWS EC2 보안 그룹(Security Group)에서 GitHub Actions 서버 IP의 22번 포트 접근을 차단하고 있음을 디버깅.
-- **해결 방법:** EC2 보안 그룹의 인바운드 규칙에 GitHub Actions 배포용 SSH(Port 22) 접근 허용 정책을 추가하여 자동 배포 파이프라인 정상화.
+![GitHub Actions Configure SSH 실패](docs/images/github-actions-ssh-keyscan-fail.png)
+
+- **문제 현상:** CI/CD 파이프라인의 `Configure SSH` 단계에서 `ssh-keyscan`이 실패하며 EC2 배포가 중단됨. `ssh-keyscan` 실패는 GitHub Actions 러너에서 EC2의 22번 포트에 도달하지 못했다는 의미로, SSH 키 문제보다 네트워크/주소 문제일 가능성이 큼.
+- **원인 분석:** Secret(`EC2_HOST`, `EC2_USER`, `EC2_DEPLOY_PATH`)과 EC2 보안 그룹(Security Group) 인바운드 규칙을 점검한 결과, SSH(Port 22) 규칙이 특정 IP 하나만 허용하고 있어 GitHub Actions 서버의 접근이 차단되고 있었음.
+
+![EC2 보안그룹 SSH 단일 IP 허용](docs/images/ec2-sg-ssh-single-ip.png)
+
+- **해결 방법:** 기존 SSH 규칙은 유지한 채, GitHub Actions 배포용 SSH(Port 22) 접근을 허용하는 인바운드 규칙을 추가로 등록하여 자동 배포 파이프라인을 정상화.
 
 ### 2) API 도메인 분리 및 Nginx 리버스 프록시 구축 (WAF 충돌 해결)
 
-- **문제 현상:** 관리자 페이지에서 뉴스 기사 내 이미지 업로드 시 WAF 차단으로 인해 `403 Forbidden` 및 HTML 에러 응답 반환.
-- **원인 분석:** 프론트엔드와 API가 동일한 CloudFront+WAF 환경을 경유하고 있어, WAF의 보수적인 규칙이 에디터의 `POST /api/admin/uploads` 멀티파트 요청을 공격 시도로 오인하여 차단함을 확인.
-- **해결 방법:** API 전용 도메인(`api.newsin.kr`)을 분리 개설. EC2 내부에 Nginx 리버스 프록시를 도입해 Certbot SSL을 적용하고, 4000번 포트의 외부 직접 노출을 차단하여 보안성을 확보하는 동시에 API 통신을 정상화함.
+![업로드 API 네트워크 200 응답](docs/images/network-uploads-200-status.png)
+
+- **문제 현상:** 관리자 에디터에서 이미지 URL·파일 버튼·붙여넣기로 이미지를 삽입해도 input에 반영되지 않음. 업로드 API 자체는 동작하는 것처럼 보였으나, 응답 `Content-Type`이 `application/json`이 아닌 `text/html`이고 `Server: AmazonS3`로 반환됨. 프론트와 API가 동일한 CloudFront + WAF를 경유해, 무료 WAF가 `POST /api/admin/uploads` 멀티파트 요청을 차단할 수 있는 구조였음.
+
+![CloudFront+WAF 경유 시 API 차단 구조](docs/images/waf-api-block-architecture.png)
+
+- **원인 분석:** 처음에는 `RichBodyEditor`의 DOM 삽입·직렬화 흐름(`execCommand` → `serialize()` → 부모 `setBlocks`)과 `execCommand` 호출 시점의 커서/포커스 부재를 의심했으나, CloudFront 커스텀 403 응답을 제거하자 `/uploads`가 403으로 노출되며 **실제 원인은 CloudFront/WAF 경로의 업로드 차단**임을 확인.
+- **해결 방법:** API 전용 도메인 `api.newsin.kr`를 분리 개설하고, EC2에 Nginx·Certbot을 설치해 리버스 프록시와 SSL을 구성. `newsin.kr`는 프론트(WAF 유지), `api.newsin.kr`는 API 전용(WAF 없이 EC2 직접)으로 분리. 이후 EC2 보안 그룹에서 CloudFront가 4000번으로 직접 들어오던 TCP 4000 인바운드 규칙을 정리하고, 4000번은 EC2 내부에서 Nginx → Express 프록시에만 사용하도록 변경.
+
+```nginx
+# /etc/nginx/sites-available/api.newsin.kr
+server {
+    listen 80;
+    server_name api.newsin.kr;
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/html;
+    }
+
+    location / {
+        proxy_pass http://127.0.0.1:4000;
+        proxy_http_version 1.1;
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        client_max_body_size 50M;
+    }
+}
+```
+
+- **결과:** `newsin.kr` → 프론트만(WAF 유지 가능), `api.newsin.kr` → API만(WAF 없음, EC2 직접). Certbot으로 SSL 적용 후 업로드·API 통신 정상화.
+
+![API 도메인 분리 후 구조](docs/images/api-domain-split-architecture.png)
+
+- **수정해야 할 부분:** EC2 보안 그룹의 인바운드 규칙 편집
+  - 수정 전: CloudFront가 EC2 4000번 포트로 직접 들어와야 해서 TCP 4000 규칙이 있어야 했음
+    ![EC2 보안그룹 TCP 4000 규칙 (변경 전)](docs/images/ec2-sg-tcp-4000-before.png)
+  - 수정 후: `api.newsin.kr` 추가 후 4000번은 EC2 내부에서 Nginx가 Express로 넘길 때만 사용
 
 ### 3) React SPA의 S3/CloudFront 정적 호스팅 라우팅 해결
 
-- **문제 현상:** 서브 라우트(`/search`, `/article/:id` 등)에서 새로고침(F5) 시 S3가 해당 파일 객체를 찾지 못하고 `403 Access Denied` XML 에러 반환.
-- **원인 분석:** S3 정적 호스팅은 실제 파일 경로를 찾는데, 클라이언트 사이드 라우팅(React Router) 기반 SPA 특성상 `/search`라는 물리적 파일이 존재하지 않아 S3 거부 응답이 발생함.
-- **해결 방법:** CloudFront 사용자 지정 에러 응답(Custom Error Pages)을 설정하여, `403/404` 에러 발생 시 최상위 `index.html`을 `200 OK` 응답으로 반환하도록 커스텀 처리해 클라이언트 라우팅이 정상 작동하도록 개선.
+- **문제 현상:** 서브 라우트(`/search`, `/login`, `/article/:id` 등) 중간 경로에서 새로고침(F5) 시 S3가 `403 Access Denied` XML 에러를 반환함.
+
+![S3 Access Denied XML 응답](docs/images/s3-spa-access-denied.png)
+
+- **원인 분석:** SPA(React) 클라이언트 라우팅 설정이 빠져 있어 생기는 현상. 메인(`/`)에서 링크로 이동할 때는 이미 로드된 `index.html` 위에서 React Router가 처리하므로 정상이지만, `/search` 등에서 새로고침하면 브라우저가 S3에 해당 경로 파일을 직접 요청함. S3에는 보통 `index.html`만 있고 `/search` 같은 파일은 없으며, 퍼블릭 액세스 차단이 켜져 있으면 “파일 없음”이 **403 Access Denied XML**로 보이는 경우가 많음.
+
+| 동작 | 결과 |
+| --- | --- |
+| 메인(`/`)에서 링크로 이동 | `index.html`이 이미 로드됨 → React Router가 처리 → 정상 |
+| `/search`, `/login` 등에서 새로고침 | 브라우저가 S3에 `/search` 파일을 직접 요청 → 파일 없음 → Access Denied |
+
+- **해결 방법:** CloudFront 사용자 지정 에러 응답(Custom Error Pages)을 추가해 `403`/`404` 발생 시 `/index.html`을 `200 OK`로 반환하도록 설정. 이후 클라이언트 라우팅이 정상 동작함.
+
+![CloudFront 사용자 지정 에러 응답 설정](docs/images/cloudfront-custom-error-pages.png)
 
 ### 4) 동적 콘텐츠 생성에 따른 S3 정적 호스팅 및 SEO 동기화 자동화
 
-- **문제 현상:** 빌드 시점에 프리렌더링된 기사만 S3에 존재하므로, 배포 이후 새롭게 작성된 동적 기사는 새로고침 시 403 에러가 발생하고 SNS 공유 시 Open Graph(미리보기 썸네일)가 표시되지 않는 현상 발생.
-- **원인 분석:** 클라이언트 라이브러리(React Helmet 등)는 크롤러 봇이 JavaScript를 실행하기 전에 메타데이터를 수집하므로 정적 호스팅 환경에서는 동적 메타태그 주입에 한계가 있음.
-- **해결 방법:** 백엔드에 **동적 S3 HTML 파이프라인** 구축. 관리자가 기사를 승인/수정/삭제할 때마다 해당 기사의 OG 메타데이터가 삽입된 HTML을 동적으로 생성하여 S3의 `/article/{id}/index.html` 경로로 자동 업로드 및 CloudFront 캐시 무효화를 수행하도록 프로세스 완전 자동화.
+- **문제 현상:** 새로 작성한 기사 상세 페이지(`/article/{id}`)에서 새로고침(F5) 시 Access Denied가 발생함. 목록에서 클릭해 들어가면 정상이지만, 배포 이후 생성된 기사는 S3에 해당 `index.html`이 없어 직접 URL 요청이 실패함.
+- **원인 분석:** `prerender-og.mjs`는 **빌드 당시 API에 있던 기사만** `dist/article/{id}/index.html`로 만들어 S3에 올림. 배포 후 관리자가 만든 기사에는 prerender 파일이 없고, `/article/*` 경로 SPA 폴백도 미적용된 상태였음. S3 + CloudFront(OAC)에서 존재하지 않는 객체를 요청하면 XML 형태의 Access Denied가 반환됨.
 
-### 4) 동적 콘텐츠 생성에 따른 S3 정적 호스팅 및 SEO 동기화 자동화
+```js
+// prerender-og.mjs
+for (const article of articles) {
+  const description = article.excerpt?.trim() || article.title
 
-- **문제 현상:** 빌드 시점에 프리렌더링된 기사만 S3에 존재하므로, 배포 이후 새롭게 작성된 동적 기사는 새로고침 시 403 에러가 발생하고 SNS 공유 시 Open Graph(미리보기 썸네일)가 표시되지 않는 현상 발생.
-- **원인 분석:** 클라이언트 라이브러리(React Helmet 등)는 크롤러 봇이 JavaScript를 실행하기 전에 메타데이터를 수집하므로 정적 호스팅 환경에서는 동적 메타태그 주입에 한계가 있음.
-- **해결 방법:** 백엔드에 **동적 S3 HTML 파이프라인** 구축. 관리자가 기사를 승인/수정/삭제할 때마다 해당 기사의 OG 메타데이터가 삽입된 HTML을 동적으로 생성하여 S3의 `/article/{id}/index.html` 경로로 자동 업로드 및 CloudFront 캐시 무효화를 수행하도록 프로세스 완전 자동화.
+  writeOgPage(
+    outDir,
+    ['article', article.id],
+    injectMeta(baseHtml, {
+      title: `${article.title} - ${SITE_NAME}`,
+      // ...
+    }),
+  )
+}
+```
+
+| 동작 | 동작 방식 | 결과 |
+| --- | --- | --- |
+| 목록에서 기사 클릭 | React Router가 `/article/:id` 처리 (클라이언트) | 정상 |
+| F5 새로고침 | 브라우저가 `https://newsin.kr/article/{id}`를 S3/CloudFront에 직접 요청 | 해당 경로 객체 없음 → Access Denied |
+
+- **해결 방법:** 새 기사가 업로드·게시될 때마다 S3에 `article/{id}/index.html`(OG HTML)을 업로드하고 CloudFront 캐시를 갱신하는 동기화 함수를 구축. 기사 승인·수정 시 S3 업로드/캐시 무효화, 삭제 시 S3 객체 삭제 및 캐시 무효화를 호출해 관리자 게시/수정/삭제와 S3 페이지를 항상 동기화.
