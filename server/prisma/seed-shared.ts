@@ -1,8 +1,11 @@
 import { existsSync, mkdirSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { config } from "dotenv";
 import type { PrismaClient } from "@prisma/client";
 import { hashPassword } from "../src/utils/password.js";
+
+config();
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export const uploadsImagesDir = path.resolve(__dirname, "../uploads/images");
@@ -32,7 +35,11 @@ export async function seedSections(prisma: PrismaClient) {
 
 /** 결제 테스트 전용 계정 (사이트 ADMIN과 별도, role=USER) */
 export async function seedPaymentTestUser(prisma: PrismaClient) {
-  const hash = await hashPassword("12341234");
+  const pw = process.env.SEED_TEST_PASSWORD;
+  if (!pw) {
+    throw new Error("SEED_TEST_PASSWORD 환경변수가 설정되지 않았습니다.");
+  }
+  const hash = await hashPassword(pw);
   await prisma.user.upsert({
     where: { username: "admin" },
     update: { passwordHash: hash, role: "USER" },
